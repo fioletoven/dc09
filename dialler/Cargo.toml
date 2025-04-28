@@ -9,5 +9,5 @@ clap = { version = "4.5", features = ["derive"] }
 common = { path = "../common" }
 log = { version = "0.4" }
 thiserror = { version = "2.0" }
-tokio = { version = "1", features = ["rt", "rt-multi-thread", "fs", "time", "io-util", "macros"] }
+tokio = { version = "1", features = ["fs", "io-util", "macros", "net", "rt-multi-thread", "rt", "time"] }
 tokio-util = { version = "0.7" }

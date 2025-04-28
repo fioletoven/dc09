@@ -164,6 +164,7 @@ dependencies = [
  "home",
  "log",
  "nom",
+ "thiserror 2.0.12",
  "time",
  "tracing",
  "tracing-appender",

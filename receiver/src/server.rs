@@ -45,8 +45,15 @@ async fn process_connection(mut socket: TcpStream, addr: SocketAddr) {
                 return;
             },
             Ok(n) => match core::str::from_utf8(&buffer[..n]) {
-                Ok(s) => process_message(&mut socket, &addr, s).await,
-                Err(e) => log::error!("invalid UTF-8 sequence: {}", e),
+                Ok(msg) => {
+                    if !process_message(&mut socket, &addr, msg).await {
+                        break;
+                    }
+                },
+                Err(err) => {
+                    log::error!("received invalid UTF-8 sequence: {}", err);
+                    break;
+                },
             },
             Err(e) => {
                 log::error!("failed to read from socket: {}", e);
@@ -58,7 +65,7 @@ async fn process_connection(mut socket: TcpStream, addr: SocketAddr) {
     log::debug!("connection closed for {}", addr);
 }
 
-async fn process_message(socket: &mut TcpStream, addr: &SocketAddr, received_message: &str) {
+async fn process_message(socket: &mut TcpStream, addr: &SocketAddr, received_message: &str) -> bool {
     match DC09Message::try_from(received_message) {
         Ok(msg) => {
             log::info!("{} -> {}", addr, received_message.trim());
@@ -72,7 +79,13 @@ async fn process_message(socket: &mut TcpStream, addr: &SocketAddr, received_mes
 
             log::info!("{} <- {}", addr, ack.trim());
             let _ = socket.write_all(ack.as_bytes()).await;
+
+            true
         },
-        Err(_) => log::error!("invalid message received: {}", received_message.trim()),
+        Err(e) => {
+            log::error!("{} -> {}: {}", addr, e, received_message.trim());
+
+            false
+        },
     }
 }

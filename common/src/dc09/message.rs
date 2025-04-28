@@ -1,24 +1,33 @@
 use nom::{
     IResult, Parser,
-    bytes::complete::{tag, take_until, take_while_m_n, take_while1},
+    bytes::complete::{tag, take_till, take_until, take_while_m_n, take_while1},
     combinator::{map, map_res, opt},
     multi::many0,
     sequence::{delimited, preceded},
 };
-use std::str;
+use std::{fmt::Display, str};
 
 use super::calculate_crc;
 
+/// Possible DC09 message errors.
+#[derive(thiserror::Error, Debug)]
 pub enum DC09Error {
+    /// Failed to parse DC09 message.
+    #[error("failed to parse DC09 message")]
     ParseError,
-    ValidationError,
+
+    /// Invalid DC09 message length.
+    #[error("invalid DC09 message length")]
+    InvalidLength,
+
+    /// Invalid DC09 message CRC.
+    #[error("invalid DC09 message CRC")]
+    InvalidCrc,
 }
 
-/// Represents a parsed DC09 message.
+/// Represents a DC09 message.
 #[derive(Debug, PartialEq)]
 pub struct DC09Message {
-    pub crc: u16,
-    pub len: u16,
     pub token: String,
     pub sequence: u16,
     pub receiver: Option<String>,
@@ -26,6 +35,23 @@ pub struct DC09Message {
     pub account: String,
     pub data: String,
     pub extended: Vec<String>,
+    pub timestamp: Option<String>,
+}
+
+impl DC09Message {
+    /// Creates new [`DC09Message`] instance.
+    pub fn new(token: String, account: String, sequence: u16, data: String) -> Self {
+        Self {
+            token,
+            sequence,
+            receiver: None,
+            line_prefix: None,
+            account,
+            data,
+            extended: Vec::new(),
+            timestamp: None,
+        }
+    }
 }
 
 impl TryFrom<&str> for DC09Message {
@@ -33,24 +59,61 @@ impl TryFrom<&str> for DC09Message {
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match parse_dc09(value) {
-            Ok((_, message)) => validate_message(value, message),
+            Ok((_, message)) => match message.validate() {
+                Ok(_) => Ok(message.message),
+                Err(e) => Err(e),
+            },
             Err(_) => Err(DC09Error::ParseError),
         }
     }
 }
 
-/// Validates length and CRC of the parsed message.
-fn validate_message(origin: &str, message: DC09Message) -> Result<DC09Message, DC09Error> {
-    // [\n] + [4 (crc)] + [4 (len)] + [\r] = 10
-    if message.len != (origin.len() as u16 - 10) {
-        Err(DC09Error::ValidationError)
-    } else {
-        // [\n] + [4 (crc)] + [4 (len)] = 9
-        let crc = calculate_crc(&origin[9..(message.len as usize + 9)]);
-        if message.crc != crc {
-            Err(DC09Error::ValidationError)
+impl Display for DC09Message {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut body = format!(
+            "\"{}\"{:04}{}{}#{}[{}]",
+            self.token,
+            self.sequence,
+            self.receiver.as_deref().unwrap_or(""),
+            self.line_prefix.as_deref().unwrap_or(""),
+            self.account,
+            self.data
+        );
+
+        for data in &self.extended {
+            body.push('[');
+            body.push_str(data);
+            body.push(']');
+        }
+
+        if let Some(timestamp) = &self.timestamp {
+            body.push('_');
+            body.push_str(timestamp);
+        }
+
+        write!(f, "\x0A{:04X}{:04X}{}\x0D", calculate_crc(&body), body.len(), body)
+    }
+}
+
+/// Represents a parsed DC09 message that can be validated.
+struct ParsedMessage<'a> {
+    origin: &'a str,
+    message: DC09Message,
+    crc: u16,
+    len: u16,
+}
+
+impl ParsedMessage<'_> {
+    /// Validates length and CRC of the parsed message.
+    fn validate(&self) -> Result<(), DC09Error> {
+        let message_len = usize::from(self.len);
+        // [\n] + [4 (crc)] + [4 (len)] + [\r] = 10
+        if message_len != (self.origin.len() - 10) {
+            Err(DC09Error::InvalidLength)
         } else {
-            Ok(message)
+            // [\n] + [4 (crc)] + [4 (len)] = 9
+            let crc = calculate_crc(&self.origin[9..(message_len + 9)]);
+            if self.crc != crc { Err(DC09Error::InvalidCrc) } else { Ok(()) }
         }
     }
 }
@@ -106,7 +169,7 @@ fn parse_data(input: &str) -> IResult<&str, String> {
 
 /// Parses a complete DC09 message.  
 /// Format example: `3BAC0029"SIA-DCS"0002#0123[#0123|Nti20:50:26RP99]`
-fn parse_dc09(input: &str) -> IResult<&str, DC09Message> {
+fn parse_dc09(input: &str) -> IResult<&str, ParsedMessage> {
     map(
         (
             tag("\n"),
@@ -119,18 +182,23 @@ fn parse_dc09(input: &str) -> IResult<&str, DC09Message> {
             parse_account,
             parse_data,
             many0(parse_data),
+            opt((tag("_"), take_till(|c| c == '\r'))),
             tag("\r"),
         ),
-        |(_, crc, len, token, sequence, receiver, line_prefix, account, data, extended, _)| DC09Message {
-            crc,
+        |(_, crc, len, token, sequence, receiver, line_prefix, account, data, extended, timestamp, _)| ParsedMessage {
             len,
-            token,
-            sequence,
-            receiver,
-            line_prefix,
-            account,
-            data,
-            extended,
+            crc,
+            origin: input,
+            message: DC09Message {
+                token,
+                sequence,
+                receiver,
+                line_prefix,
+                account,
+                data,
+                extended,
+                timestamp: timestamp.map(|t| t.1.to_owned()),
+            },
         },
     )
     .parse(input)
