@@ -17,15 +17,19 @@ pub struct Args {
     #[arg(long, short, default_value = "SIA-DCS")]
     pub token: String,
 
+    /// Message to send.
+    #[arg(long, short, default_value = "#1234|NRR|AStart of dialler")]
+    pub message: String,
+
     /// Dialler account number.
     #[arg(long, short, default_value = "1234")]
     pub account: String,
 
-    /// Message sequence number.
+    /// Message sequence start number.
     #[arg(long, short, default_value = "1")]
     pub sequence: u16,
 
-    /// Message to send.
-    #[arg(long, short, default_value = "#1234|NRR|AStart of dialler")]
-    pub message: String,
+    /// Repeat message the specified number of times.
+    #[arg(long, short, default_value = "1")]
+    pub repeat: u16,
 }

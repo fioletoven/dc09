@@ -1,2 +1,7 @@
-# dc09
-DC09 dialler and receiver test apps
+# SIA DC-09 simulators
+
+This repository contains `Dialler` and `Receiver` simulators for the `SIA DC-09` protocol.
+
+## License
+
+[MIT](./LICENSE)

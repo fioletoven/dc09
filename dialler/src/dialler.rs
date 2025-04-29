@@ -40,6 +40,7 @@ impl Dialler {
 
         let message = DC09Message::new(token, self.account.clone(), self.sequence, message).to_string();
 
+        log::info!("{} connecting to {}:{}", self.account, self.address, self.port);
         let mut stream = TcpStream::connect((self.address, self.port)).await?;
         stream.write_all(message.as_bytes()).await?;
         log::info!("{} >> {}", self.account, message.trim());
