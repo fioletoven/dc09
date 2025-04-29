@@ -7,12 +7,14 @@ use tokio::{
     task::JoinHandle,
 };
 
+/// Represents DC09 messages receiver.
 pub struct Server {
     listener: TcpListener,
     connections: Vec<JoinHandle<()>>,
 }
 
 impl Server {
+    /// Creates new [`Server`] instance.
     pub fn new(listener: TcpListener) -> Self {
         Self {
             listener,
@@ -20,6 +22,7 @@ impl Server {
         }
     }
 
+    /// Starts listening on configured address and port for incoming DC09 messages.
     pub async fn run(&mut self) -> Result<()> {
         loop {
             match self.listener.accept().await {

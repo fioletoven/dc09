@@ -12,11 +12,19 @@ async fn main() -> Result<()> {
 
     let args = cli::Args::parse();
 
+    if let Err(error) = run_receiver(args).await {
+        log::error!("{}", error);
+    }
+
+    Ok(())
+}
+
+async fn run_receiver(args: cli::Args) -> Result<()> {
     log::info!("start listening on {}:{}", args.address, args.port);
     let listener = TcpListener::bind(format!("{}:{}", args.address, args.port)).await?;
     let mut server = Server::new(listener);
 
-    let _ = server.run().await;
+    server.run().await?;
 
     Ok(())
 }

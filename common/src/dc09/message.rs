@@ -23,6 +23,14 @@ pub enum DC09Error {
     /// Invalid DC09 message CRC.
     #[error("invalid DC09 message CRC")]
     InvalidCrc,
+
+    /// Invalid sequence number for received DC09 message.
+    #[error("invalid sequence number")]
+    InvalidSequenceNumber,
+
+    /// Invalid account number for received DC09 message.
+    #[error("invalid account number")]
+    InvalidAccountNumber,
 }
 
 /// Represents a DC09 message.
@@ -50,6 +58,17 @@ impl DC09Message {
             data,
             extended: Vec::new(),
             timestamp: None,
+        }
+    }
+
+    /// Validates account and sequence numbers in the DC09 message.
+    pub fn validate(&self, account: &str, sequence: u16) -> Result<(), DC09Error> {
+        if self.sequence != sequence {
+            Err(DC09Error::InvalidSequenceNumber)
+        } else if self.account != account {
+            Err(DC09Error::InvalidAccountNumber)
+        } else {
+            Ok(())
         }
     }
 }
