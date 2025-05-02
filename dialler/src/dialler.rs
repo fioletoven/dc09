@@ -38,7 +38,7 @@ impl Dialler {
             self.sequence = 1;
         }
 
-        let message = DC09Message::new(token, self.account.clone(), self.sequence, message).to_string();
+        let message = DC09Message::new(token, self.account.clone(), self.sequence, Some(message)).to_string();
 
         log::info!("{} connecting to {}:{}", self.account, self.address, self.port);
         let mut stream = TcpStream::connect((self.address, self.port)).await?;
@@ -63,7 +63,7 @@ impl Dialler {
     }
 
     fn process_ack(&self, message: &str) {
-        match DC09Message::try_from(message) {
+        match DC09Message::try_from(message, None) {
             Ok(msg) => match msg.validate(&self.account, self.sequence) {
                 Ok(_) => log::info!("{} << {}", self.account, message.trim()),
                 Err(e) => log::error!("{} << ({}) {}", self.account, e, message.trim()),

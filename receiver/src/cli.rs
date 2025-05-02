@@ -12,4 +12,8 @@ pub struct Args {
     /// Port number to listen on.
     #[arg(long, short, default_value = "8080")]
     pub port: u16,
+
+    /// Key to decrypt DC09 messages (16, 24 or 32 bytes long).
+    #[arg(long, short)]
+    pub key: Option<String>,
 }

@@ -24,7 +24,7 @@ async fn run_receiver(args: cli::Args) -> Result<()> {
     let listener = TcpListener::bind(format!("{}:{}", args.address, args.port)).await?;
     let mut server = Server::new(listener);
 
-    server.run().await?;
+    server.run(args.key).await?;
 
     Ok(())
 }

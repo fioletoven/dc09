@@ -1,5 +1,5 @@
 use anyhow::Result;
-use common::dc09::{AckMessage, DC09Message};
+use common::dc09::DC09Message;
 use std::net::SocketAddr;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -22,11 +22,14 @@ impl Server {
         }
     }
 
-    /// Starts listening on configured address and port for incoming DC09 messages.
-    pub async fn run(&mut self) -> Result<()> {
+    /// Starts listening on configured address and port for incoming DC09 messages.  
+    /// **Note** that `key` can be provided that will be used to decrypt encrypted DC09 messages.
+    pub async fn run(&mut self, key: Option<String>) -> Result<()> {
         loop {
             match self.listener.accept().await {
-                Ok((stream, addr)) => self.connections.push(tokio::spawn(process_connection(stream, addr))),
+                Ok((stream, addr)) => self
+                    .connections
+                    .push(tokio::spawn(process_connection(stream, addr, key.clone()))),
                 Err(e) => log::error!("error accepting connection: {}", e),
             };
 
@@ -37,7 +40,7 @@ impl Server {
     }
 }
 
-async fn process_connection(mut socket: TcpStream, addr: SocketAddr) {
+async fn process_connection(mut socket: TcpStream, addr: SocketAddr, key: Option<String>) {
     log::debug!("accepted new connection from {}", addr);
 
     let mut buffer = [0; 1024];
@@ -49,7 +52,7 @@ async fn process_connection(mut socket: TcpStream, addr: SocketAddr) {
             },
             Ok(n) => match core::str::from_utf8(&buffer[..n]) {
                 Ok(msg) => {
-                    if !process_message(&mut socket, &addr, msg).await {
+                    if !process_message(&mut socket, &addr, msg, key.as_deref()).await {
                         break;
                     }
                 },
@@ -68,17 +71,11 @@ async fn process_connection(mut socket: TcpStream, addr: SocketAddr) {
     log::debug!("connection closed for {}", addr);
 }
 
-async fn process_message(socket: &mut TcpStream, addr: &SocketAddr, received_message: &str) -> bool {
-    match DC09Message::try_from(received_message) {
+async fn process_message(socket: &mut TcpStream, addr: &SocketAddr, received_message: &str, key: Option<&str>) -> bool {
+    match DC09Message::try_from(received_message, key) {
         Ok(msg) => {
             log::info!("{} -> {}", addr, received_message.trim());
-            let ack = AckMessage::new(
-                msg.sequence,
-                msg.receiver.as_deref(),
-                msg.line_prefix.as_deref(),
-                &msg.account,
-            )
-            .to_string();
+            let ack = DC09Message::ack(msg.account, msg.sequence).to_string();
 
             log::info!("{} <- {}", addr, ack.trim());
             let _ = socket.write_all(ack.as_bytes()).await;

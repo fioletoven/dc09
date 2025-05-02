@@ -1,10 +1,12 @@
 use crc::Crc;
 
-pub use self::ack_message::AckMessage;
+pub use self::cryptography::*;
 pub use self::message::DC09Message;
+pub use self::parser::*;
 
-mod ack_message;
+mod cryptography;
 mod message;
+mod parser;
 
 // Calculates CRC (CRC-16/ARC, as used in SIA DC-09).
 pub fn calculate_crc(message: &str) -> u16 {

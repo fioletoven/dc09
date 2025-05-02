@@ -4,13 +4,17 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+aes = { version = "0.8" }
 anyhow = { version = "1.0" }
+cbc = { version = "0.1", features = ["block-padding", "alloc"] }
 crc = { version = "3.2" }
+hex = { version = "0.4" }
 home = { version = "0.5" }
 log = { version = "0.4" }
 nom = { version = "8.0" }
-time = { version = "0.3", features = ["local-offset", "formatting", "macros"] }
+rand = { version = "0.9" }
 thiserror = { version = "2.0" }
+time = { version = "0.3", features = ["local-offset", "formatting", "macros"] }
 tracing = { version = "0.1" }
 tracing-appender = { version = "0.2" }
 tracing-error = { version = "0.2" }
