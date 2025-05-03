@@ -11,25 +11,27 @@ use tokio::{
 pub struct Server {
     listener: TcpListener,
     connections: Vec<JoinHandle<()>>,
+    key: Option<String>,
 }
 
 impl Server {
     /// Creates new [`Server`] instance.
-    pub fn new(listener: TcpListener) -> Self {
+    pub fn new(listener: TcpListener, key: Option<String>) -> Self {
         Self {
             listener,
             connections: Vec::new(),
+            key,
         }
     }
 
     /// Starts listening on configured address and port for incoming DC09 messages.  
     /// **Note** that `key` can be provided that will be used to decrypt encrypted DC09 messages.
-    pub async fn run(&mut self, key: Option<String>) -> Result<()> {
+    pub async fn run(&mut self) -> Result<()> {
         loop {
             match self.listener.accept().await {
                 Ok((stream, addr)) => self
                     .connections
-                    .push(tokio::spawn(process_connection(stream, addr, key.clone()))),
+                    .push(tokio::spawn(process_connection(stream, addr, self.key.clone()))),
                 Err(e) => log::error!("error accepting connection: {}", e),
             };
 
@@ -75,7 +77,7 @@ async fn process_message(socket: &mut TcpStream, addr: &SocketAddr, received_mes
     match DC09Message::try_from(received_message, key) {
         Ok(msg) => {
             log::info!("{} -> {}", addr, received_message.trim());
-            let ack = DC09Message::ack(msg.account, msg.sequence).to_string();
+            let ack = build_ack_message(msg, key);
 
             log::info!("{} <- {}", addr, ack.trim());
             let _ = socket.write_all(ack.as_bytes()).await;
@@ -87,5 +89,24 @@ async fn process_message(socket: &mut TcpStream, addr: &SocketAddr, received_mes
 
             false
         },
+    }
+}
+
+fn build_ack_message(msg: DC09Message, key: Option<&str>) -> String {
+    let was_encrypted = msg.was_encrypted();
+
+    let ack = DC09Message::ack(msg.account, msg.sequence)
+        .with_receiver(msg.receiver)
+        .with_line_prefix(msg.line_prefix);
+
+    if was_encrypted {
+        if let Some(key) = key {
+            ack.to_encrypted(key)
+                .expect("Cannot encrypt DC09 message with the provided key")
+        } else {
+            ack.to_string()
+        }
+    } else {
+        ack.to_string()
     }
 }

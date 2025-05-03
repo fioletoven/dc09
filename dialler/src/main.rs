@@ -19,12 +19,12 @@ async fn main() -> Result<()> {
 }
 
 async fn run_diallers(args: cli::Args) -> Result<()> {
-    let mut dialler = Dialler::new(args.address, args.port, args.account).with_start_sequence(args.sequence.saturating_sub(1));
+    let mut dialler = Dialler::new(args.address, args.port, args.account)
+        .with_key(args.key)
+        .with_start_sequence(args.sequence.saturating_sub(1));
 
     for _ in 0..args.repeat {
-        dialler
-            .send_message(args.token.clone(), args.message.clone(), args.key.as_deref())
-            .await?;
+        dialler.send_message(args.token.clone(), args.message.clone()).await?;
     }
 
     Ok(())

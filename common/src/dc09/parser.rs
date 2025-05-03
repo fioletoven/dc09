@@ -70,8 +70,8 @@ pub fn parse_dc09(input: &str, key: Option<&str>) -> Result<DC09Message, DC09Err
         Ok(p) => Ok(DC09Message {
             token: header.token.to_string(),
             sequence: header.sequence,
-            receiver: header.receiver.map(String::from),
-            line_prefix: header.line_prefix.map(String::from),
+            receiver: header.receiver.map(|r| format!("R{}", r)),
+            line_prefix: header.line_prefix.map(|l| format!("L{}", l)),
             account: header.account.to_string(),
             data: if p.1.data.is_empty() {
                 None

@@ -36,10 +36,32 @@ impl DC09Message {
         Self::new("ACK".to_owned(), account, sequence, None).with_timestamp(OffsetDateTime::now_utc())
     }
 
-    // Adds UTC timestamp to DC09 message.
+    // Adds UTC timestamp to the DC09 message.
     pub fn with_timestamp(mut self, timestamp: OffsetDateTime) -> Self {
         let format = format_description!("[hour]:[minute]:[second],[month]-[day]-[year]");
         self.timestamp = Some(timestamp.format(&format).expect("Failed to format timestamp"));
+        self
+    }
+
+    /// Adds Receiver to the DC09 message.  
+    /// **Note** that it should contain `R` as a prefix.
+    pub fn with_receiver(mut self, receiver: Option<String>) -> Self {
+        if let Some(receiver) = receiver {
+            if receiver.chars().next().is_some_and(|ch| ch == 'R') {
+                self.receiver = Some(receiver);
+            }
+        }
+        self
+    }
+
+    /// Adds Line Prefix to the DC09 message.  
+    /// **Note** that it should contain `L` as a prefix.
+    pub fn with_line_prefix(mut self, line_prefix: Option<String>) -> Self {
+        if let Some(line_prefix) = line_prefix {
+            if line_prefix.chars().next().is_some_and(|ch| ch == 'L') {
+                self.line_prefix = Some(line_prefix);
+            }
+        }
         self
     }
 
@@ -57,6 +79,11 @@ impl DC09Message {
         } else {
             Ok(())
         }
+    }
+
+    /// Returns `true` if the DC09 message was (or should be) encrypted.
+    pub fn was_encrypted(&self) -> bool {
+        self.token.chars().next().is_some_and(|ch| ch == '*')
     }
 
     /// Converts the [`DC09Message`] to encrypted `String` representation.

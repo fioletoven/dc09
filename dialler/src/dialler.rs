@@ -12,6 +12,7 @@ pub struct Dialler {
     port: u16,
     account: String,
     sequence: u16,
+    key: Option<String>,
 }
 
 impl Dialler {
@@ -22,6 +23,7 @@ impl Dialler {
             port,
             account,
             sequence: 0,
+            key: None,
         }
     }
 
@@ -31,15 +33,21 @@ impl Dialler {
         self
     }
 
+    /// Sets key that is used to decrypt and encrypt DC09 messages.
+    pub fn with_key(mut self, key: Option<String>) -> Self {
+        self.key = key;
+        self
+    }
+
     /// Sends DC09 message with specified ID token.
-    pub async fn send_message(&mut self, token: String, message: String, key: Option<&str>) -> Result<()> {
+    pub async fn send_message(&mut self, token: String, message: String) -> Result<()> {
         self.sequence += 1;
         if self.sequence > 9999 {
             self.sequence = 1;
         }
 
         let message = DC09Message::new(token, self.account.clone(), self.sequence, Some(message));
-        let message = if let Some(key) = key {
+        let message = if let Some(key) = self.key.as_deref() {
             message
                 .to_encrypted(key)
                 .expect("Cannot encrypt DC09 message with provided key")
@@ -70,7 +78,7 @@ impl Dialler {
     }
 
     fn process_ack(&self, message: &str) {
-        match DC09Message::try_from(message, None) {
+        match DC09Message::try_from(message, self.key.as_deref()) {
             Ok(msg) => match msg.validate(&self.account, self.sequence) {
                 Ok(_) => log::info!("{} << {}", self.account, message.trim()),
                 Err(e) => log::error!("{} << ({}) {}", self.account, e, message.trim()),

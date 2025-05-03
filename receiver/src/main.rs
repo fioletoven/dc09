@@ -22,9 +22,9 @@ async fn main() -> Result<()> {
 async fn run_receiver(args: cli::Args) -> Result<()> {
     log::info!("start listening on {}:{}", args.address, args.port);
     let listener = TcpListener::bind(format!("{}:{}", args.address, args.port)).await?;
-    let mut server = Server::new(listener);
+    let mut server = Server::new(listener, args.key);
 
-    server.run(args.key).await?;
+    server.run().await?;
 
     Ok(())
 }
