@@ -32,13 +32,20 @@ impl Dialler {
     }
 
     /// Sends DC09 message with specified ID token.
-    pub async fn send_message(&mut self, token: String, message: String) -> Result<()> {
+    pub async fn send_message(&mut self, token: String, message: String, key: Option<&str>) -> Result<()> {
         self.sequence += 1;
         if self.sequence > 9999 {
             self.sequence = 1;
         }
 
-        let message = DC09Message::new(token, self.account.clone(), self.sequence, Some(message)).to_string();
+        let message = DC09Message::new(token, self.account.clone(), self.sequence, Some(message));
+        let message = if let Some(key) = key {
+            message
+                .to_encrypted(key)
+                .expect("Cannot encrypt DC09 message with provided key")
+        } else {
+            message.to_string()
+        };
 
         log::info!("{} connecting to {}:{}", self.account, self.address, self.port);
         let mut stream = TcpStream::connect((self.address, self.port)).await?;

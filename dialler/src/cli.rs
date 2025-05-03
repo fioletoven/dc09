@@ -1,4 +1,5 @@
 use clap::Parser;
+use common::utils::parse_key;
 use std::net::IpAddr;
 
 /// Test client that sends DC09 messages.
@@ -32,4 +33,8 @@ pub struct Args {
     /// Repeat message the specified number of times.
     #[arg(long, short, default_value = "1")]
     pub repeat: u16,
+
+    /// Key to encrypt DC09 messages (16, 24 or 32 bytes long).
+    #[arg(long, short, value_parser = parse_key)]
+    pub key: Option<String>,
 }

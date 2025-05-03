@@ -1,4 +1,5 @@
 use clap::Parser;
+use common::utils::parse_key;
 use std::net::IpAddr;
 
 /// Test server that handles DC09 dialler connections.
@@ -14,6 +15,6 @@ pub struct Args {
     pub port: u16,
 
     /// Key to decrypt DC09 messages (16, 24 or 32 bytes long).
-    #[arg(long, short)]
+    #[arg(long, short, value_parser = parse_key)]
     pub key: Option<String>,
 }
