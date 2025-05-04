@@ -31,9 +31,9 @@ impl DC09Message {
         }
     }
 
-    /// Creates new [`DC09Message`] instance with `ACK` ID token.
-    pub fn ack(account: String, sequence: u16) -> Self {
-        Self::new("ACK".to_owned(), account, sequence, None).with_timestamp(OffsetDateTime::now_utc())
+    /// Creates new acknowledgement [`DC09Message`] instance with ID token and timestamp.
+    pub fn ack(token: String, account: String, sequence: u16) -> Self {
+        Self::new(token, account, sequence, None).with_timestamp(OffsetDateTime::now_utc())
     }
 
     // Adds UTC timestamp to the DC09 message.

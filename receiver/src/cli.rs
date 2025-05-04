@@ -17,4 +17,8 @@ pub struct Args {
     /// Key to decrypt DC09 messages (16, 24 or 32 bytes long).
     #[arg(long, short, value_parser = parse_key)]
     pub key: Option<String>,
+
+    /// Send `NAK` instead of `ACK` for received messages.
+    #[arg(long)]
+    pub nak: bool,
 }
