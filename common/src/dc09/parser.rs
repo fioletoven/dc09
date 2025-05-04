@@ -51,7 +51,8 @@ pub fn parse_dc09(input: &str, key: Option<&str>) -> Result<DC09Message, DC09Err
 
     validate(input, header.len, header.crc)?;
 
-    let decrypted = if header.token.chars().next().is_some_and(|ch| ch == '*') {
+    let is_encrypted = header.token.chars().next().is_some_and(|ch| ch == '*');
+    let decrypted = if is_encrypted {
         if let Some(key) = key {
             decrypt(&payload[1..payload.len() - 1], key.as_bytes())
         } else {
@@ -75,6 +76,8 @@ pub fn parse_dc09(input: &str, key: Option<&str>) -> Result<DC09Message, DC09Err
             account: header.account.to_string(),
             data: if p.1.data.is_empty() {
                 None
+            } else if is_encrypted {
+                Some(remove_padding(p.1.data))
             } else {
                 Some(p.1.data.to_owned())
             },
@@ -95,6 +98,14 @@ fn validate(input: &str, len: u16, crc: u16) -> Result<(), DC09Error> {
         // [\n] + [4 (crc)] + [4 (len)] = 9
         let new_crc = calculate_crc(&input[9..(message_len + 9)]);
         if crc != new_crc { Err(DC09Error::InvalidCrc) } else { Ok(()) }
+    }
+}
+
+fn remove_padding(data: &str) -> String {
+    if let Some(data) = data.split_once('|').map(|x| x.1) {
+        data.to_owned()
+    } else {
+        data.to_owned()
     }
 }
 
