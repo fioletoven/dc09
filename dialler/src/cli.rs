@@ -30,6 +30,10 @@ pub struct Args {
     #[arg(long, short, default_value = "1")]
     pub sequence: u16,
 
+    /// Number of diallers to create.
+    #[arg(long, short, default_value = "1")]
+    pub diallers: u16,
+
     /// Repeat message the specified number of times.
     #[arg(long, short, default_value = "1")]
     pub repeat: u16,

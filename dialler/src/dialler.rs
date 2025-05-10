@@ -7,6 +7,7 @@ use tokio::{
 };
 
 /// Represents DC09 dialler.
+#[derive(Clone)]
 pub struct Dialler {
     address: IpAddr,
     port: u16,
@@ -62,6 +63,7 @@ impl Dialler {
 
         self.wait_for_ack(&mut stream).await;
 
+        stream.shutdown().await?;
         Ok(())
     }
 

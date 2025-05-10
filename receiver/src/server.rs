@@ -54,7 +54,11 @@ async fn process_connection(mut socket: TcpStream, addr: SocketAddr, key: Option
     loop {
         match socket.read(&mut buffer).await {
             Ok(0) => {
-                log::debug!("connection closed by {}", addr);
+                match socket.shutdown().await {
+                    Ok(_) => log::debug!("connection closed by {}", addr),
+                    Err(e) => log::warn!("error while socket shutdown: {}", e),
+                }
+
                 return;
             },
             Ok(n) => match core::str::from_utf8(&buffer[..n]) {
@@ -75,7 +79,10 @@ async fn process_connection(mut socket: TcpStream, addr: SocketAddr, key: Option
         }
     }
 
-    log::debug!("connection closed for {}", addr);
+    match socket.shutdown().await {
+        Ok(_) => log::debug!("connection closed for {}", addr),
+        Err(e) => log::warn!("error while socket shutdown: {}", e),
+    }
 }
 
 async fn process_message(

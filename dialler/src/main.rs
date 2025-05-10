@@ -19,12 +19,30 @@ async fn main() -> Result<()> {
 }
 
 async fn run_diallers(args: cli::Args) -> Result<()> {
-    let mut dialler = Dialler::new(args.address, args.port, args.account)
+    let dialler = Dialler::new(args.address, args.port, args.account)
         .with_key(args.key)
         .with_start_sequence(args.sequence.saturating_sub(1));
 
-    for _ in 0..args.repeat {
-        dialler.send_message(args.token.clone(), args.message.clone()).await?;
+    let mut tasks = Vec::new();
+    for _ in 0..args.diallers {
+        let mut _dialler = dialler.clone();
+        let _token = args.token.clone();
+        let _message = args.message.clone();
+
+        let task = tokio::spawn(async move {
+            for _ in 0..args.repeat {
+                if let Err(error) = _dialler.send_message(_token.clone(), _message.clone()).await {
+                    log::error!("{}", error);
+                    break;
+                }
+            }
+        });
+
+        tasks.push(task);
+    }
+
+    for task in tasks {
+        task.await.unwrap();
     }
 
     Ok(())
