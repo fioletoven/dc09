@@ -21,16 +21,18 @@ The DC-09 Dialler Simulator is a command-line application designed to send DC-09
 
 The application uses the following arguments, configurable via the command line:
 
-| Argument           | Description                                            | Default Value | Example |
-|:-------------------|:-------------------------------------------------------|:--------------|:--------|
-| `--address`        | IP address of the receiver                             | 127.0.0.1     | --address 192.168.1.100 |
-| `--port`, `-p`     | Port number of the receiver                            | 8080          | --port 9000 |
-| `--token`, `-t`    | ID token for the DC09 message                          | SIA-DCS       | --token ADM-CID |
-| `--message`, `-m`  | Message content to send                                | #1234\|NRR\|AStart of dialler | --message "#5678\|NRR\|Atest" |
-| `--account`, `-a`  | Dialler account number                                 | 1234          | --account 5678 |
-| `--sequence`, `-s` | Message sequence start number                          | 1             | --sequence 100 |
-| `--repeat`, `-r`   | Number of times to repeat the message                  | 1             | --repeat 5 |
-| `--key`, `-k`      | Encryption key for DC09 messages (16, 24, or 32 bytes) | None          | --key "my16bytekey1234567890abcdef" |
+| Argument           | Description                                                   | Default Value                 | Example                             |
+|:-------------------|:--------------------------------------------------------------|:------------------------------|:------------------------------------|
+| `--address`        | IP address of the receiver                                    | 127.0.0.1                     | --address 192.168.1.100             |
+| `--port`, `-p`     | Port number of the receiver                                   | 8080                          | --port 9000                         |
+| `--token`, `-t`    | ID token for the DC09 message                                 | SIA-DCS                       | --token ADM-CID                     |
+| `--message`, `-m`  | Message content to send                                       | #1234\|NRR\|AStart of dialler | --message "#5678\|NRR\|Atest"       |
+| `--account`, `-a`  | Dialler account number (automatically incremented if possible)| 1234                          | --account 5678                      |
+| `--fixed`, `-f`    | Ensure that the account number is fixed across all diallers   | false                         | --fixed                             |
+| `--sequence`, `-s` | Message sequence start number                                 | 1                             | --sequence 100                      |
+| `--diallers`, `-d` | Number of diallers to create                                  | 1                             | --diallers 20                       |
+| `--repeat`, `-r`   | Number of times to repeat the message per dialler             | 1                             | --repeat 5                          |
+| `--key`, `-k`      | Encryption key for DC09 messages (16, 24, or 32 bytes)        | None                          | --key "my16bytekey1234567890abcdef" |
 
 #### Example commands
 
@@ -64,12 +66,12 @@ The DC-09 Receiver Simulator is a command-line test server that handles DC-09 di
 
 The application uses the following arguments, configurable via the command line:
 
-| Argument       | Description                                             | Default Value | Example |
-|:---------------|:--------------------------------------------------------|:--------------|:--------|
-| `--address`    | IP address to listen on                                 | 127.0.0.1     | --address 192.168.1.100 |
-| `--port`, `-p` | Port number to listen on                                | 8080          | --port 9000 |
+| Argument       | Description                                             | Default Value | Example                             |
+|:---------------|:--------------------------------------------------------|:--------------|:------------------------------------|
+| `--address`    | IP address to listen on                                 | 127.0.0.1     | --address 192.168.1.100             |
+| `--port`, `-p` | Port number to listen on                                | 8080          | --port 9000                         |
 | `--key`, `-k`  | Key to decrypt DC09 messages (16, 24, or 32 bytes long) | None          | --key "my16bytekey1234567890abcdef" |
-| `--nak`        | Send `NAK` instead of `ACK` for received messages       | false         | --nak |
+| `--nak`        | Send `NAK` instead of `ACK` for received messages       | false         | --nak                               |
 
 #### Example commands
 

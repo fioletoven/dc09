@@ -7,6 +7,7 @@ use tokio::{
 };
 
 /// Represents DC09 dialler.
+#[derive(Clone)]
 pub struct Dialler {
     address: IpAddr,
     port: u16,
@@ -39,6 +40,11 @@ impl Dialler {
         self
     }
 
+    /// Sets new account for the dialler.
+    pub fn set_account(&mut self, new_account: String) {
+        self.account = new_account;
+    }
+
     /// Sends DC09 message with specified ID token.
     pub async fn send_message(&mut self, token: String, message: String) -> Result<()> {
         self.sequence += 1;
@@ -62,6 +68,7 @@ impl Dialler {
 
         self.wait_for_ack(&mut stream).await;
 
+        stream.shutdown().await?;
         Ok(())
     }
 
