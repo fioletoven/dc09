@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.1.1 - 2025-05-10
+
+### Features
+
+- allow creating multiple diallers in the diallers app
+
 ## 0.1.0 - 2025-05-04
 
 First release of DC-09 dialler and receiver simulators.

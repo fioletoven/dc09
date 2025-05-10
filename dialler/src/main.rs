@@ -19,13 +19,20 @@ async fn main() -> Result<()> {
 }
 
 async fn run_diallers(args: cli::Args) -> Result<()> {
+    let account = args.account.parse::<u32>().ok();
     let dialler = Dialler::new(args.address, args.port, args.account)
         .with_key(args.key)
         .with_start_sequence(args.sequence.saturating_sub(1));
 
     let mut tasks = Vec::new();
-    for _ in 0..args.diallers {
+    for i in 0..args.diallers {
         let mut _dialler = dialler.clone();
+        if let Some(account) = account {
+            if !args.fixed {
+                _dialler.set_account((account + i as u32).to_string());
+            }
+        }
+
         let _token = args.token.clone();
         let _message = args.message.clone();
 
@@ -42,7 +49,7 @@ async fn run_diallers(args: cli::Args) -> Result<()> {
     }
 
     for task in tasks {
-        task.await.unwrap();
+        task.await?;
     }
 
     Ok(())

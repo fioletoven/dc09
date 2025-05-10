@@ -22,9 +22,13 @@ pub struct Args {
     #[arg(long, short, default_value = "#1234|NRR|AStart of dialler")]
     pub message: String,
 
-    /// Dialler account number.
+    /// Dialler account number (automatically incremented if possible).
     #[arg(long, short, default_value = "1234")]
     pub account: String,
+
+    /// Ensure that the account number is fixed across all diallers.
+    #[arg(long, short)]
+    pub fixed: bool,
 
     /// Message sequence start number.
     #[arg(long, short, default_value = "1")]
@@ -34,7 +38,7 @@ pub struct Args {
     #[arg(long, short, default_value = "1")]
     pub diallers: u16,
 
-    /// Repeat message the specified number of times.
+    /// Repeat message the specified number of times per dialler.
     #[arg(long, short, default_value = "1")]
     pub repeat: u16,
 
