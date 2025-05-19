@@ -20,7 +20,7 @@ async fn main() -> Result<()> {
 
 async fn run_diallers(args: cli::Args) -> Result<()> {
     let account = args.account.parse::<u32>().ok();
-    let dialler = Dialler::new(args.address, args.port, args.account)
+    let dialler = Dialler::new(args.address, args.port, args.account, args.udp)
         .with_key(args.key)
         .with_start_sequence(args.sequence.saturating_sub(1));
 

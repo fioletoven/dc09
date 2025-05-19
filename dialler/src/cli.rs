@@ -45,4 +45,8 @@ pub struct Args {
     /// Key to encrypt DC09 messages (16, 24 or 32 bytes long).
     #[arg(long, short, value_parser = parse_key)]
     pub key: Option<String>,
+
+    /// Use a UDP connection instead of a TCP one.
+    #[arg(long, short)]
+    pub udp: bool,
 }

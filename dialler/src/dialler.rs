@@ -3,7 +3,7 @@ use common::dc09::DC09Message;
 use std::net::IpAddr;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
-    net::TcpStream,
+    net::{TcpStream, UdpSocket},
 };
 
 /// Represents DC09 dialler.
@@ -14,17 +14,19 @@ pub struct Dialler {
     account: String,
     sequence: u16,
     key: Option<String>,
+    udp: bool,
 }
 
 impl Dialler {
     /// Creates new [`Dialler`] instance.
-    pub fn new(address: IpAddr, port: u16, account: String) -> Self {
+    pub fn new(address: IpAddr, port: u16, account: String, use_udp: bool) -> Self {
         Self {
             address,
             port,
             account,
             sequence: 0,
             key: None,
+            udp: use_udp,
         }
     }
 
@@ -62,29 +64,55 @@ impl Dialler {
         };
 
         log::info!("{} connecting to {}:{}", self.account, self.address, self.port);
+        if self.udp {
+            self.send_message_udp(message).await?;
+        } else {
+            self.send_message_tcp(message).await?;
+        }
+
+        Ok(())
+    }
+
+    async fn send_message_tcp(&mut self, message: String) -> Result<()> {
         let mut stream = TcpStream::connect((self.address, self.port)).await?;
         stream.write_all(message.as_bytes()).await?;
         log::info!("{} >> {}", self.account, message.trim());
 
-        self.wait_for_ack(&mut stream).await;
+        let mut buffer = [0; 1024];
+        match stream.read(&mut buffer).await {
+            Ok(0) => log::error!("{}, connection closed by receiver", self.account),
+            Ok(n) => self.process_ack_buffer(buffer, n),
+            Err(e) => log::error!("{}, failed to read response: {}", self.account, e),
+        }
 
         stream.shutdown().await?;
         Ok(())
     }
 
-    async fn wait_for_ack(&self, stream: &mut TcpStream) {
+    async fn send_message_udp(&self, message: String) -> Result<()> {
+        let socket = UdpSocket::bind("0.0.0.0:0").await?;
+        socket.connect((self.address, self.port)).await?;
+
+        let _ = socket.send(message.as_bytes()).await?;
+        log::info!("{} >> {}", self.account, message.trim());
+
         let mut buffer = [0; 1024];
-        match stream.read(&mut buffer).await {
-            Ok(0) => log::error!("{}, connection closed by receiver", self.account),
-            Ok(n) => match core::str::from_utf8(&buffer[..n]) {
-                Ok(ack) => self.process_ack(ack),
-                Err(e) => log::error!("{}, received invalid UTF-8 sequence: {}", self.account, e),
-            },
+        match socket.recv(&mut buffer).await {
+            Ok(n) => self.process_ack_buffer(buffer, n),
             Err(e) => log::error!("{}, failed to read response: {}", self.account, e),
+        };
+
+        Ok(())
+    }
+
+    fn process_ack_buffer(&self, buffer: [u8; 1024], n: usize) {
+        match core::str::from_utf8(&buffer[..n]) {
+            Ok(ack) => self.process_ack_message(ack),
+            Err(e) => log::error!("{}, received invalid UTF-8 sequence: {}", self.account, e),
         }
     }
 
-    fn process_ack(&self, message: &str) {
+    fn process_ack_message(&self, message: &str) {
         match DC09Message::try_from(message, self.key.as_deref()) {
             Ok(msg) => match msg.validate(&self.account, self.sequence) {
                 Ok(_) => log::info!("{} << {}", self.account, message.trim()),
