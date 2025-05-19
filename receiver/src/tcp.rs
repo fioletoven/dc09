@@ -7,16 +7,19 @@ use tokio::{
     task::JoinHandle,
 };
 
-/// Represents DC09 messages receiver.
-pub struct Server {
+use crate::utils::build_response_message;
+
+/// Represents DC09 messages TCP receiver.
+pub struct TcpServer {
     listener: TcpListener,
     connections: Vec<JoinHandle<()>>,
     key: Option<String>,
     send_nak: bool,
 }
 
-impl Server {
-    /// Creates new [`Server`] instance.
+impl TcpServer {
+    /// Creates new [`TcpServer`] instance.  
+    /// **Note** that `key` can be provided to decrypt encrypted DC09 messages.
     pub fn new(listener: TcpListener, key: Option<String>, send_nak: bool) -> Self {
         Self {
             listener,
@@ -26,8 +29,7 @@ impl Server {
         }
     }
 
-    /// Starts listening on configured address and port for incoming DC09 messages.  
-    /// **Note** that `key` can be provided that will be used to decrypt encrypted DC09 messages.
+    /// Starts listening on configured TCP address and port for incoming DC09 messages.
     pub async fn run(&mut self) -> Result<()> {
         loop {
             match self.listener.accept().await {
@@ -61,7 +63,7 @@ async fn process_connection(mut socket: TcpStream, addr: SocketAddr, key: Option
 
                 return;
             },
-            Ok(n) => match core::str::from_utf8(&buffer[..n]) {
+            Ok(n) => match str::from_utf8(&buffer[..n]) {
                 Ok(msg) => {
                     if !process_message(&mut socket, &addr, msg, key.as_deref(), nak).await {
                         break;
@@ -107,26 +109,5 @@ async fn process_message(
 
             false
         },
-    }
-}
-
-fn build_response_message(msg: DC09Message, key: Option<&str>, nak: bool) -> String {
-    let was_encrypted = msg.was_encrypted();
-
-    let token = if nak { "NAK".to_owned() } else { "ACK".to_owned() };
-    let response = DC09Message::ack(token, msg.account, msg.sequence)
-        .with_receiver(msg.receiver)
-        .with_line_prefix(msg.line_prefix);
-
-    if was_encrypted {
-        if let Some(key) = key {
-            response
-                .to_encrypted(key)
-                .expect("Cannot encrypt DC09 message with the provided key")
-        } else {
-            response.to_string()
-        }
-    } else {
-        response.to_string()
     }
 }

@@ -3,7 +3,7 @@ use common::utils::parse_key;
 use std::net::IpAddr;
 
 /// Test server that handles DC09 dialler connections.
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Clone)]
 #[command(version, about, long_about = None)]
 pub struct Args {
     /// IP address to listen on.
