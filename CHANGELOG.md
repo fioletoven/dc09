@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.1.2 - 2025-05-19
+
+### Features
+
+- add UDP support to the dialer and receiver apps
+
 ## 0.1.1 - 2025-05-10
 
 ### Features
