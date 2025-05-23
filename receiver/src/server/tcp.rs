@@ -3,11 +3,13 @@ use common::dc09::DC09Message;
 use std::net::SocketAddr;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
-    net::{TcpListener, TcpStream},
+    net::{TcpListener, TcpStream, ToSocketAddrs},
     task::JoinHandle,
 };
 
 use crate::utils::build_response_message;
+
+use super::Server;
 
 /// Represents DC09 messages TCP receiver.
 pub struct TcpServer {
@@ -17,20 +19,21 @@ pub struct TcpServer {
     send_nak: bool,
 }
 
-impl TcpServer {
+impl Server for TcpServer {
     /// Creates new [`TcpServer`] instance.  
     /// **Note** that `key` can be provided to decrypt encrypted DC09 messages.
-    pub fn new(listener: TcpListener, key: Option<String>, send_nak: bool) -> Self {
-        Self {
+    async fn new(address: impl ToSocketAddrs, key: Option<String>, send_nak: bool) -> Result<Self> {
+        let listener = TcpListener::bind(address).await?;
+        Ok(Self {
             listener,
             connections: Vec::new(),
             key,
             send_nak,
-        }
+        })
     }
 
     /// Starts listening on configured TCP address and port for incoming DC09 messages.
-    pub async fn run(&mut self) -> Result<()> {
+    async fn run(&mut self) -> Result<()> {
         loop {
             match self.listener.accept().await {
                 Ok((stream, addr)) => self.connections.push(tokio::spawn(process_connection(
@@ -52,7 +55,7 @@ impl TcpServer {
 async fn process_connection(mut socket: TcpStream, addr: SocketAddr, key: Option<String>, nak: bool) {
     log::debug!("accepted new connection from {}", addr);
 
-    let mut buffer = [0; 1024];
+    let mut buffer = [0; 1536];
     loop {
         match socket.read(&mut buffer).await {
             Ok(0) => {

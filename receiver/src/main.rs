@@ -1,12 +1,9 @@
 use anyhow::Result;
 use clap::Parser;
-use tcp::TcpServer;
-use tokio::net::{TcpListener, UdpSocket};
-use udp::UdpServer;
+use server::{Server, TcpServer, UdpServer};
 
 mod cli;
-mod tcp;
-mod udp;
+mod server;
 mod utils;
 
 #[tokio::main]
@@ -16,7 +13,7 @@ async fn main() -> Result<()> {
     let args = cli::Args::parse();
 
     log::info!("start listening on {}:{}", args.address, args.port);
-    let (tcp, udp) = tokio::join!(run_tcp_receiver(args.clone()), run_udp_receiver(args));
+    let (tcp, udp) = tokio::join!(run_receiver::<TcpServer>(args.clone()), run_receiver::<UdpServer>(args));
 
     if let Err(error) = tcp {
         log::error!("tcp: {}", error);
@@ -29,19 +26,8 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn run_udp_receiver(args: cli::Args) -> Result<()> {
-    let listener = UdpSocket::bind(format!("{}:{}", args.address, args.port)).await?;
-    let mut server = UdpServer::new(listener, args.key, args.nak);
-
-    server.run().await?;
-
-    Ok(())
-}
-
-async fn run_tcp_receiver(args: cli::Args) -> Result<()> {
-    let listener = TcpListener::bind(format!("{}:{}", args.address, args.port)).await?;
-    let mut server = TcpServer::new(listener, args.key, args.nak);
-
+async fn run_receiver<T: Server>(args: cli::Args) -> Result<()> {
+    let mut server = T::new(format!("{}:{}", args.address, args.port), args.key, args.nak).await?;
     server.run().await?;
 
     Ok(())

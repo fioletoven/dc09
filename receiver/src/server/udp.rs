@@ -2,11 +2,13 @@ use anyhow::Result;
 use common::dc09::DC09Message;
 use std::{net::SocketAddr, sync::Arc};
 use tokio::{
-    net::UdpSocket,
+    net::{ToSocketAddrs, UdpSocket},
     sync::mpsc::{UnboundedSender, unbounded_channel},
 };
 
 use crate::utils::build_response_message;
+
+use super::Server;
 
 /// Represents DC09 messages UDP receiver.
 pub struct UdpServer {
@@ -15,19 +17,20 @@ pub struct UdpServer {
     send_nak: bool,
 }
 
-impl UdpServer {
+impl Server for UdpServer {
     /// Creates new [`UdpServer`] instance.  
     /// **Note** that `key` can be provided to decrypt encrypted DC09 messages.
-    pub fn new(socket: UdpSocket, key: Option<String>, send_nak: bool) -> Self {
-        Self {
+    async fn new(address: impl ToSocketAddrs, key: Option<String>, send_nak: bool) -> Result<Self> {
+        let socket = UdpSocket::bind(address).await?;
+        Ok(Self {
             socket: Arc::new(socket),
             key,
             send_nak,
-        }
+        })
     }
 
     /// Starts listening on configured UDP address and port for incoming DC09 messages.
-    pub async fn run(&mut self) -> Result<()> {
+    async fn run(&mut self) -> Result<()> {
         let (tx, mut _rx) = unbounded_channel::<(String, SocketAddr)>();
         let _s = self.socket.clone();
 
@@ -39,7 +42,7 @@ impl UdpServer {
             }
         });
 
-        let mut buffer = [0; 1024];
+        let mut buffer = [0; 1536];
         loop {
             let (n, addr) = self.socket.recv_from(&mut buffer).await?;
             match str::from_utf8(&buffer[..n]) {
