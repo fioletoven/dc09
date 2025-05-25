@@ -35,15 +35,6 @@ async fn run_receiver<T: Server>(args: &cli::Args) -> Result<()> {
 }
 
 fn create_server_config(args: &cli::Args) -> ServerConfig {
-    let mut result = ServerConfig {
-        diallers: Vec::new(),
-        key: args.key.clone(),
-        send_naks: args.nak,
-    };
-
-    if let Some(scenarios) = &args.scenarios {
-        result.diallers = scenarios.diallers.clone();
-    }
-
-    result
+    let diallers = args.scenarios.as_ref().map(|s| s.diallers.clone()).unwrap_or_default();
+    ServerConfig::new(diallers, args.key.clone(), args.nak)
 }

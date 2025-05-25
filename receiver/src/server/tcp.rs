@@ -1,5 +1,5 @@
 use anyhow::Result;
-use common::dc09::{DC09Message, parse_dc09_account_name};
+use common::dc09::DC09Message;
 use std::{net::SocketAddr, sync::Arc};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -87,15 +87,7 @@ async fn process_connection(mut socket: TcpStream, addr: SocketAddr, config: Arc
 }
 
 async fn process_message(socket: &mut TcpStream, addr: &SocketAddr, received_message: &str, config: &ServerConfig) -> bool {
-    let mut key = config.key.as_deref();
-    if !config.diallers.is_empty() {
-        if let Ok(name) = parse_dc09_account_name(received_message) {
-            if let Some(index) = config.diallers.iter().position(|d| d.name == name) {
-                key = config.diallers[index].key.as_deref();
-            }
-        }
-    }
-
+    let key = config.get_key_for_message(received_message);
     match DC09Message::try_from(received_message, key) {
         Ok(msg) => {
             log::info!("{} -> {}", addr, received_message.trim());

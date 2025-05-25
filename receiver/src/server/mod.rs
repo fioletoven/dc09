@@ -1,19 +1,13 @@
+pub use self::config::ServerConfig;
 pub use self::tcp::TcpServer;
 pub use self::udp::UdpServer;
 
+mod config;
 mod tcp;
 mod udp;
 
 use anyhow::Result;
-use common::scenarios::DiallerConfig;
 use tokio::net::ToSocketAddrs;
-
-/// Server configuration.
-pub struct ServerConfig {
-    pub diallers: Vec<DiallerConfig>,
-    pub key: Option<String>,
-    pub send_naks: bool,
-}
 
 /// Represents type that can be treated as a server.
 pub trait Server: Sized {
