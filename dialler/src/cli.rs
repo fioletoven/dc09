@@ -53,7 +53,7 @@ pub struct Args {
     #[arg(long, short)]
     pub udp: bool,
 
-    /// File with defined scenarios for this run.
+    /// File with defined scenarios configuration for this run.
     #[arg(long, value_parser = parse_scenarios_path)]
     pub scenarios: Option<Scenarios>,
 }

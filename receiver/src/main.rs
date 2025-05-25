@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
-use server::{Server, TcpServer, UdpServer};
+use server::{Server, ServerConfig, TcpServer, UdpServer};
 
 mod cli;
 mod server;
@@ -13,7 +13,7 @@ async fn main() -> Result<()> {
     let args = cli::Args::parse();
 
     log::info!("start listening on {}:{}", args.address, args.port);
-    let (tcp, udp) = tokio::join!(run_receiver::<TcpServer>(args.clone()), run_receiver::<UdpServer>(args));
+    let (tcp, udp) = tokio::join!(run_receiver::<TcpServer>(&args), run_receiver::<UdpServer>(&args));
 
     if let Err(error) = tcp {
         log::error!("tcp: {}", error);
@@ -26,9 +26,24 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn run_receiver<T: Server>(args: cli::Args) -> Result<()> {
-    let mut server = T::new(format!("{}:{}", args.address, args.port), args.key, args.nak).await?;
+async fn run_receiver<T: Server>(args: &cli::Args) -> Result<()> {
+    let config = create_server_config(args);
+    let mut server = T::new(format!("{}:{}", args.address, args.port), config).await?;
     server.run().await?;
 
     Ok(())
+}
+
+fn create_server_config(args: &cli::Args) -> ServerConfig {
+    let mut result = ServerConfig {
+        diallers: Vec::new(),
+        key: args.key.clone(),
+        send_naks: args.nak,
+    };
+
+    if let Some(scenarios) = &args.scenarios {
+        result.diallers = scenarios.diallers.clone();
+    }
+
+    result
 }

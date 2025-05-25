@@ -1,6 +1,6 @@
 use anyhow::Result;
-use common::dc09::DC09Message;
-use std::net::SocketAddr;
+use common::dc09::{DC09Message, parse_dc09_account_name};
+use std::{net::SocketAddr, sync::Arc};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpListener, TcpStream, ToSocketAddrs},
@@ -9,26 +9,24 @@ use tokio::{
 
 use crate::utils::build_response_message;
 
-use super::Server;
+use super::{Server, ServerConfig};
 
 /// Represents DC09 messages TCP receiver.
 pub struct TcpServer {
     listener: TcpListener,
     connections: Vec<JoinHandle<()>>,
-    key: Option<String>,
-    send_nak: bool,
+    config: Arc<ServerConfig>,
 }
 
 impl Server for TcpServer {
     /// Creates new [`TcpServer`] instance.  
     /// **Note** that `key` can be provided to decrypt encrypted DC09 messages.
-    async fn new(address: impl ToSocketAddrs, key: Option<String>, send_nak: bool) -> Result<Self> {
+    async fn new(address: impl ToSocketAddrs, config: ServerConfig) -> Result<Self> {
         let listener = TcpListener::bind(address).await?;
         Ok(Self {
             listener,
             connections: Vec::new(),
-            key,
-            send_nak,
+            config: Arc::new(config),
         })
     }
 
@@ -36,12 +34,10 @@ impl Server for TcpServer {
     async fn run(&mut self) -> Result<()> {
         loop {
             match self.listener.accept().await {
-                Ok((stream, addr)) => self.connections.push(tokio::spawn(process_connection(
-                    stream,
-                    addr,
-                    self.key.clone(),
-                    self.send_nak,
-                ))),
+                Ok((stream, addr)) => {
+                    self.connections
+                        .push(tokio::spawn(process_connection(stream, addr, Arc::clone(&self.config))))
+                },
                 Err(e) => log::error!("error accepting connection: {}", e),
             };
 
@@ -52,7 +48,7 @@ impl Server for TcpServer {
     }
 }
 
-async fn process_connection(mut socket: TcpStream, addr: SocketAddr, key: Option<String>, nak: bool) {
+async fn process_connection(mut socket: TcpStream, addr: SocketAddr, config: Arc<ServerConfig>) {
     log::debug!("accepted new connection from {}", addr);
 
     let mut buffer = [0; 1536];
@@ -68,7 +64,7 @@ async fn process_connection(mut socket: TcpStream, addr: SocketAddr, key: Option
             },
             Ok(n) => match str::from_utf8(&buffer[..n]) {
                 Ok(msg) => {
-                    if !process_message(&mut socket, &addr, msg, key.as_deref(), nak).await {
+                    if !process_message(&mut socket, &addr, msg, &config).await {
                         break;
                     }
                 },
@@ -90,17 +86,20 @@ async fn process_connection(mut socket: TcpStream, addr: SocketAddr, key: Option
     }
 }
 
-async fn process_message(
-    socket: &mut TcpStream,
-    addr: &SocketAddr,
-    received_message: &str,
-    key: Option<&str>,
-    nak: bool,
-) -> bool {
+async fn process_message(socket: &mut TcpStream, addr: &SocketAddr, received_message: &str, config: &ServerConfig) -> bool {
+    let mut key = config.key.as_deref();
+    if !config.diallers.is_empty() {
+        if let Ok(name) = parse_dc09_account_name(received_message) {
+            if let Some(index) = config.diallers.iter().position(|d| d.name == name) {
+                key = config.diallers[index].key.as_deref();
+            }
+        }
+    }
+
     match DC09Message::try_from(received_message, key) {
         Ok(msg) => {
             log::info!("{} -> {}", addr, received_message.trim());
-            let response = build_response_message(msg, key, nak);
+            let response = build_response_message(msg, key, config.send_naks);
 
             log::info!("{} <- {}", addr, response.trim());
             let _ = socket.write_all(response.as_bytes()).await;

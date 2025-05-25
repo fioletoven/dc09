@@ -1,5 +1,5 @@
 use anyhow::Result;
-use common::dc09::DC09Message;
+use common::dc09::{DC09Message, parse_dc09_account_name};
 use std::{net::SocketAddr, sync::Arc};
 use tokio::{
     net::{ToSocketAddrs, UdpSocket},
@@ -8,31 +8,29 @@ use tokio::{
 
 use crate::utils::build_response_message;
 
-use super::Server;
+use super::{Server, ServerConfig};
 
 /// Represents DC09 messages UDP receiver.
 pub struct UdpServer {
     socket: Arc<UdpSocket>,
-    key: Option<String>,
-    send_nak: bool,
+    config: ServerConfig,
 }
 
 impl Server for UdpServer {
     /// Creates new [`UdpServer`] instance.  
     /// **Note** that `key` can be provided to decrypt encrypted DC09 messages.
-    async fn new(address: impl ToSocketAddrs, key: Option<String>, send_nak: bool) -> Result<Self> {
+    async fn new(address: impl ToSocketAddrs, config: ServerConfig) -> Result<Self> {
         let socket = UdpSocket::bind(address).await?;
         Ok(Self {
             socket: Arc::new(socket),
-            key,
-            send_nak,
+            config,
         })
     }
 
     /// Starts listening on configured UDP address and port for incoming DC09 messages.
     async fn run(&mut self) -> Result<()> {
         let (tx, mut _rx) = unbounded_channel::<(String, SocketAddr)>();
-        let _s = self.socket.clone();
+        let _s = Arc::clone(&self.socket);
 
         tokio::spawn(async move {
             while let Some((response, addr)) = _rx.recv().await {
@@ -46,7 +44,7 @@ impl Server for UdpServer {
         loop {
             let (n, addr) = self.socket.recv_from(&mut buffer).await?;
             match str::from_utf8(&buffer[..n]) {
-                Ok(msg) => process_message(&tx, addr, msg, self.key.as_deref(), self.send_nak),
+                Ok(msg) => process_message(&tx, addr, msg, &self.config),
                 Err(err) => {
                     log::error!("received invalid UTF-8 sequence: {}", err);
                 },
@@ -55,17 +53,20 @@ impl Server for UdpServer {
     }
 }
 
-fn process_message(
-    tx: &UnboundedSender<(String, SocketAddr)>,
-    addr: SocketAddr,
-    received_message: &str,
-    key: Option<&str>,
-    nak: bool,
-) {
+fn process_message(tx: &UnboundedSender<(String, SocketAddr)>, addr: SocketAddr, received_message: &str, config: &ServerConfig) {
+    let mut key = config.key.as_deref();
+    if !config.diallers.is_empty() {
+        if let Ok(name) = parse_dc09_account_name(received_message) {
+            if let Some(index) = config.diallers.iter().position(|d| d.name == name) {
+                key = config.diallers[index].key.as_deref();
+            }
+        }
+    }
+
     match DC09Message::try_from(received_message, key) {
         Ok(msg) => {
             log::info!("{} -> {}", addr, received_message.trim());
-            let response = build_response_message(msg, key, nak);
+            let response = build_response_message(msg, key, config.send_naks);
 
             log::info!("{} <- {}", addr, response.trim());
             let _ = tx.send((response, addr));
