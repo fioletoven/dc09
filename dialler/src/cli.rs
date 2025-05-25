@@ -1,5 +1,8 @@
 use clap::Parser;
-use common::utils::parse_key;
+use common::{
+    scenarios::Scenarios,
+    utils::{parse_key, parse_scenarios_path},
+};
 use std::net::IpAddr;
 
 /// Test client that sends DC09 messages.
@@ -11,7 +14,7 @@ pub struct Args {
     pub address: IpAddr,
 
     /// Port number of the receiver.
-    #[arg(long, short, default_value = "8080")]
+    #[arg(long, short, default_value_t = 8080)]
     pub port: u16,
 
     /// ID token.
@@ -31,15 +34,15 @@ pub struct Args {
     pub fixed: bool,
 
     /// Message sequence start number.
-    #[arg(long, short, default_value = "1")]
+    #[arg(long, short, default_value_t = 1)]
     pub sequence: u16,
 
     /// Number of diallers to create.
-    #[arg(long, short, default_value = "1")]
+    #[arg(long, short, default_value_t = 1)]
     pub diallers: u16,
 
     /// Repeat message the specified number of times per dialler.
-    #[arg(long, short, default_value = "1")]
+    #[arg(long, short, default_value_t = 1)]
     pub repeat: u16,
 
     /// Key to encrypt DC09 messages (16, 24 or 32 bytes long).
@@ -49,4 +52,8 @@ pub struct Args {
     /// Use a UDP connection instead of a TCP one.
     #[arg(long, short)]
     pub udp: bool,
+
+    /// Configuration file specifying defined scenarios for the run.
+    #[arg(long, value_parser = parse_scenarios_path)]
+    pub scenarios: Option<Scenarios>,
 }

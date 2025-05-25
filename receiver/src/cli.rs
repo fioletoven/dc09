@@ -1,5 +1,8 @@
 use clap::Parser;
-use common::utils::parse_key;
+use common::{
+    scenarios::Scenarios,
+    utils::{parse_key, parse_scenarios_path},
+};
 use std::net::IpAddr;
 
 /// Test server that handles DC09 dialler connections.
@@ -21,4 +24,8 @@ pub struct Args {
     /// Send `NAK` instead of `ACK` for received messages.
     #[arg(long)]
     pub nak: bool,
+
+    /// Configuration file specifying defined scenarios for the run.
+    #[arg(long, value_parser = parse_scenarios_path)]
+    pub scenarios: Option<Scenarios>,
 }

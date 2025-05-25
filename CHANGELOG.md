@@ -1,10 +1,17 @@
 # Change Log
 
+## 0.1.3 - 2025-05-25
+
+### Features
+
+- add support (initial) for scenario files in the dialler and receiver applications
+- allow distinct keys for different account names
+
 ## 0.1.2 - 2025-05-19
 
 ### Features
 
-- add UDP support to the dialer and receiver apps
+- add UDP support to the dialler and receiver apps
 
 ## 0.1.1 - 2025-05-10
 
