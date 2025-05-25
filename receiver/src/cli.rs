@@ -25,7 +25,7 @@ pub struct Args {
     #[arg(long)]
     pub nak: bool,
 
-    /// File with defined scenarios configuration for this run.
+    /// Configuration file specifying defined scenarios for the run.
     #[arg(long, value_parser = parse_scenarios_path)]
     pub scenarios: Option<Scenarios>,
 }

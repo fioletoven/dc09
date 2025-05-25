@@ -6,7 +6,7 @@ This repository contains `Dialler` and `Receiver` simulators for the `SIA DC-09`
 
 ### Overview
 
-The DC-09 Dialler Simulator is a command-line application designed to send DC-09 protocol messages to a specified receiver. The simulator supports repeating messages and customizing sequence numbers for testing scenarios.
+The DC-09 Dialler Simulator is a command-line application designed to send DC-09 protocol messages to a specified receiver. The simulator supports creating multiple diallers and repeating messages for testing scenarios.
 
 ### Features
 
@@ -14,6 +14,7 @@ The DC-09 Dialler Simulator is a command-line application designed to send DC-09
 - Configure message content, account number, and ID token.
 - Support for message repetition and sequence number customization.
 - Optional encryption with a user-provided key (16, 24, or 32 bytes).
+- Initial support for scenario files, currently limited to custom dialler names and keys.
 
 ### Usage
 
@@ -34,6 +35,7 @@ The application uses the following arguments, configurable via the command line:
 | `--repeat`, `-r`   | Number of times to repeat the message per dialler             | 1                             | --repeat 5                          |
 | `--key`, `-k`      | Encryption key for DC09 messages (16, 24, or 32 bytes)        | None                          | --key "my16bytekey1234567890abcdef" |
 | `--udp`, `-u`      | Use a UDP connection instead of a TCP one                     | false                         | --udp                               |
+| `--scenarios`      | Configuration file specifying defined scenarios for the run   | None                          | --scenarios examples/scenarios.json |
 
 #### Example commands
 
@@ -60,6 +62,7 @@ The DC-09 Receiver Simulator is a command-line test server that handles DC-09 di
 - Listens for incoming DC09 dialler connections.
 - Optional encryption with a user-provided key (16, 24, or 32 bytes).
 - Optional `NAK` response for received messages.
+- Assign distinct keys to different account names using scenario files.
 
 ### Usage
 
@@ -67,12 +70,13 @@ The DC-09 Receiver Simulator is a command-line test server that handles DC-09 di
 
 The application uses the following arguments, configurable via the command line:
 
-| Argument       | Description                                             | Default Value | Example                             |
-|:---------------|:--------------------------------------------------------|:--------------|:------------------------------------|
-| `--address`    | IP address to listen on                                 | 127.0.0.1     | --address 192.168.1.100             |
-| `--port`, `-p` | Port number to listen on                                | 8080          | --port 9000                         |
-| `--key`, `-k`  | Key to decrypt DC09 messages (16, 24, or 32 bytes long) | None          | --key "my16bytekey1234567890abcdef" |
-| `--nak`        | Send `NAK` instead of `ACK` for received messages       | false         | --nak                               |
+| Argument       | Description                                                 | Default Value | Example                             |
+|:---------------|:------------------------------------------------------------|:--------------|:------------------------------------|
+| `--address`    | IP address to listen on                                     | 127.0.0.1     | --address 192.168.1.100             |
+| `--port`, `-p` | Port number to listen on                                    | 8080          | --port 9000                         |
+| `--key`, `-k`  | Key to decrypt DC09 messages (16, 24, or 32 bytes long)     | None          | --key "my16bytekey1234567890abcdef" |
+| `--nak`        | Send `NAK` instead of `ACK` for received messages           | false         | --nak                               |
+| `--scenarios`  | Configuration file specifying defined scenarios for the run | None          | --scenarios examples/scenarios.json |
 
 #### Example commands
 
