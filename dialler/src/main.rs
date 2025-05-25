@@ -19,20 +19,10 @@ async fn main() -> Result<()> {
 }
 
 async fn run_diallers(args: cli::Args) -> Result<()> {
-    let account = args.account.parse::<u32>().ok();
-    let dialler = Dialler::new(args.address, args.port, args.account, args.udp)
-        .with_key(args.key)
-        .with_start_sequence(args.sequence.saturating_sub(1));
+    let diallers = create_diallers(&args);
 
     let mut tasks = Vec::new();
-    for i in 0..args.diallers {
-        let mut _dialler = dialler.clone();
-        if let Some(account) = account {
-            if !args.fixed {
-                _dialler.set_account((account + i as u32).to_string());
-            }
-        }
-
+    for mut _dialler in diallers.into_iter() {
         let _token = args.token.clone();
         let _message = args.message.clone();
 
@@ -53,4 +43,35 @@ async fn run_diallers(args: cli::Args) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn create_diallers(args: &cli::Args) -> Vec<Dialler> {
+    let mut result = Vec::new();
+    if let Some(scenarios) = &args.scenarios {
+        for dialler in &scenarios.diallers {
+            result.push(
+                Dialler::new(args.address, args.port, dialler.name.clone(), args.udp)
+                    .with_key(dialler.key.clone())
+                    .with_start_sequence(args.sequence.saturating_sub(1)),
+            );
+        }
+    } else {
+        let account = args.account.parse::<u32>().ok();
+        let dialler = Dialler::new(args.address, args.port, args.account.clone(), args.udp)
+            .with_key(args.key.clone())
+            .with_start_sequence(args.sequence.saturating_sub(1));
+
+        for i in 0..args.diallers {
+            let mut dialler = dialler.clone();
+            if let Some(account) = account {
+                if !args.fixed {
+                    dialler.set_account((account + i as u32).to_string());
+                }
+            }
+
+            result.push(dialler);
+        }
+    }
+
+    result
 }
