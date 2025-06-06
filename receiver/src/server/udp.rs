@@ -17,7 +17,7 @@ pub struct UdpServer {
 }
 
 impl Server for UdpServer {
-    /// Creates new [`UdpServer`] instance.  
+    /// Creates new [`UdpServer`] instance.\
     /// **Note** that `key` can be provided to decrypt encrypted DC09 messages.
     async fn new(address: impl ToSocketAddrs, config: ServerConfig) -> Result<Self> {
         let socket = UdpSocket::bind(address).await?;

@@ -7,15 +7,62 @@ use crate::utils::VALID_KEY_LENGTHS;
 pub struct DiallerConfig {
     pub name: String,
     pub key: Option<String>,
+    pub receiver: Option<String>,
+    pub prefix: Option<String>,
+    pub scenarios: Option<Vec<u16>>,
 }
 
-/// Stores dialer configurations and, in the future, will support test scenarios for them.
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
+pub struct ScenarioConfig {
+    pub id: u16,
+    pub sequence: Vec<SignalConfig>,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
+pub struct SignalConfig {
+    pub token: String,
+    pub message: String,
+    #[serde(default)]
+    pub delay: u16,
+    #[serde(default)]
+    pub repeat: u16,
+}
+
+impl SignalConfig {
+    /// Creates new [`SignalConfig`] instance.
+    pub fn new(token: String, message: String, repeat: u16) -> Self {
+        Self {
+            token,
+            message,
+            delay: 0,
+            repeat,
+        }
+    }
+}
+
+/// Stores test scenarios and dialer configurations.
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct Scenarios {
+    #[serde(default)]
     pub diallers: Vec<DiallerConfig>,
+    #[serde(default)]
+    pub scenarios: Vec<ScenarioConfig>,
 }
 
 impl Scenarios {
+    /// Returns scenario ids for the specified dialler's `account`.
+    pub fn get_scenario_ids(&self, account: &str) -> Option<&[u16]> {
+        self.diallers
+            .iter()
+            .find(|d| d.name == account)
+            .and_then(|d| d.scenarios.as_deref())
+    }
+
+    /// Returns scenarios sequence for the specified `scenario_id`.
+    pub fn get_sequence(&self, scenario_id: u16) -> Option<&Vec<SignalConfig>> {
+        self.scenarios.iter().find(|s| s.id == scenario_id).map(|s| &s.sequence)
+    }
+
     /// Checks whether [`Scenarios`] contains valid and meaningful data.
     pub fn validate(&self) -> Result<(), String> {
         for dialler in &self.diallers {

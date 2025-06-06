@@ -1,5 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
+use common::scenarios::{Scenarios, SignalConfig};
 use dialler::Dialler;
 
 mod cli;
@@ -19,23 +20,12 @@ async fn main() -> Result<()> {
 }
 
 async fn run_diallers(args: cli::Args) -> Result<()> {
-    let diallers = create_diallers(&args);
+    let mut diallers = create_diallers(&args);
+    setup_message_queues(&mut diallers, &args);
 
     let mut tasks = Vec::new();
     for mut _dialler in diallers.into_iter() {
-        let _token = args.token.clone();
-        let _message = args.message.clone();
-
-        let task = tokio::spawn(async move {
-            for _ in 0..args.repeat {
-                if let Err(error) = _dialler.send_message(_token.clone(), _message.clone()).await {
-                    log::error!("{}", error);
-                    break;
-                }
-            }
-        });
-
-        tasks.push(task);
+        tasks.push(tokio::spawn(async move { _dialler.run_sequence().await }));
     }
 
     for task in tasks {
@@ -45,17 +35,51 @@ async fn run_diallers(args: cli::Args) -> Result<()> {
     Ok(())
 }
 
+fn setup_message_queues(diallers: &mut Vec<Dialler>, args: &cli::Args) {
+    let default_signal = SignalConfig::new(args.token.clone(), args.message.clone(), args.repeat);
+    for dialler in diallers {
+        if let Some(scenarios) = &args.scenarios {
+            if scenarios.scenarios.is_empty() {
+                dialler.add_sequence(vec![default_signal.clone()]);
+            } else {
+                assign_scenarios(dialler, scenarios);
+            }
+        } else {
+            dialler.add_sequence(vec![default_signal.clone()]);
+        }
+    }
+}
+
+fn assign_scenarios(dialler: &mut Dialler, scenarios: &Scenarios) {
+    if let Some(scenario_ids) = scenarios.get_scenario_ids(dialler.account()) {
+        for scenario_id in scenario_ids {
+            if let Some(sequence) = scenarios.get_sequence(*scenario_id) {
+                dialler.add_sequence(sequence.clone());
+            }
+        }
+    } else {
+        for scenario in &scenarios.scenarios {
+            dialler.add_sequence(scenario.sequence.clone());
+        }
+    }
+}
+
 fn create_diallers(args: &cli::Args) -> Vec<Dialler> {
     let mut result = Vec::new();
+
     if let Some(scenarios) = &args.scenarios {
         for dialler in &scenarios.diallers {
             result.push(
                 Dialler::new(args.address, args.port, dialler.name.clone(), args.udp)
+                    .with_receiver_number(dialler.receiver.clone())
+                    .with_line_prefix(dialler.prefix.clone())
                     .with_key(dialler.key.clone())
                     .with_start_sequence(args.sequence.saturating_sub(1)),
             );
         }
-    } else {
+    }
+
+    if result.is_empty() {
         let account = args.account.parse::<u32>().ok();
         let dialler = Dialler::new(args.address, args.port, args.account.clone(), args.udp)
             .with_key(args.key.clone())

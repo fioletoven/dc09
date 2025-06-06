@@ -2,15 +2,41 @@
     "diallers": [
         {
             "name": "1234",
+            "receiver": "R001",
+            "prefix": "L001",
             "key": null
         },
         {
             "name": "1235",
-            "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "scenarios": [ 1 ]
         },
         {
             "name": "1236",
-            "key": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            "key": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "scenarios": [ 1 ]
+        }
+    ],
+    "scenarios": [
+        {
+            "id": 1,
+            "sequence": [
+                {
+                    "token": "SIA-DCS",
+                    "message": "Nri0/RP0000",
+                    "delay": 5000
+                },
+                {
+                    "token": "SIA-DCS",
+                    "message": "Nri1/BA001",
+                    "delay": 25000
+                },
+                {
+                    "token": "SIA-DCS",
+                    "message": "Nri0/RP0000",
+                    "delay": 60000
+                }
+            ]
         }
     ]
 }

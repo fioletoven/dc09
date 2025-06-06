@@ -47,7 +47,7 @@ impl DC09Message {
         self
     }
 
-    /// Adds Receiver to the DC09 message.  
+    /// Adds Receiver to the DC09 message.\
     /// **Note** that it should contain `R` as a prefix.
     pub fn with_receiver(mut self, receiver: Option<String>) -> Self {
         if let Some(receiver) = receiver {
@@ -58,7 +58,7 @@ impl DC09Message {
         self
     }
 
-    /// Adds Line Prefix to the DC09 message.  
+    /// Adds Line Prefix to the DC09 message.\
     /// **Note** that it should contain `L` as a prefix.
     pub fn with_line_prefix(mut self, line_prefix: Option<String>) -> Self {
         if let Some(line_prefix) = line_prefix {

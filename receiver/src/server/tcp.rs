@@ -19,7 +19,7 @@ pub struct TcpServer {
 }
 
 impl Server for TcpServer {
-    /// Creates new [`TcpServer`] instance.  
+    /// Creates new [`TcpServer`] instance.\
     /// **Note** that `key` can be provided to decrypt encrypted DC09 messages.
     async fn new(address: impl ToSocketAddrs, config: ServerConfig) -> Result<Self> {
         let listener = TcpListener::bind(address).await?;

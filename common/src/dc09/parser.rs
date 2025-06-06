@@ -42,7 +42,7 @@ pub enum DC09Error {
     InvalidAccountNumber,
 }
 
-/// Parses an account name from the DC09 message.  
+/// Parses an account name from the DC09 message.\
 /// **Note** that this function does not validate CRC of the message.
 pub fn parse_dc09_account_name(input: &str) -> Result<String, DC09Error> {
     let Ok((_, header)) = parse_dc09_header(input) else {
@@ -52,7 +52,7 @@ pub fn parse_dc09_account_name(input: &str) -> Result<String, DC09Error> {
     Ok(header.account.to_owned())
 }
 
-/// Parses a complete DC09 message.  
+/// Parses a complete DC09 message.\
 /// Format example: `3BAC0029"SIA-DCS"0002#0123[#0123|Nti20:50:26RP99]`
 pub fn parse_dc09(input: &str, key: Option<&str>) -> Result<DC09Message, DC09Error> {
     let Ok((payload, header)) = parse_dc09_header(input) else {
