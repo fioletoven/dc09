@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::utils::VALID_KEY_LENGTHS;
 
-/// Keeps dialler configuration.
+/// Holds dialler configuration.
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct DiallerConfig {
     pub name: String,
@@ -10,14 +10,39 @@ pub struct DiallerConfig {
     pub receiver: Option<String>,
     pub prefix: Option<String>,
     pub scenarios: Option<Vec<u16>>,
+    #[serde(default)]
+    pub sequence: u16,
+    #[serde(default)]
+    pub udp: bool,
+    #[serde(default)]
+    pub count: u16,
 }
 
+impl DiallerConfig {
+    /// Creates new [`DiallerConfig`] instance.
+    pub fn new(name: String, sequence: u16, udp: bool, count: u16) -> Self {
+        Self {
+            name,
+            key: None,
+            receiver: None,
+            prefix: None,
+            scenarios: None,
+            sequence,
+            udp,
+            count,
+        }
+    }
+}
+
+/// Holds scenario configuration.
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct ScenarioConfig {
     pub id: u16,
+    #[serde(default)]
     pub sequence: Vec<SignalConfig>,
 }
 
+/// Holds signal configuration.
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct SignalConfig {
     pub token: String,
@@ -40,7 +65,7 @@ impl SignalConfig {
     }
 }
 
-/// Stores test scenarios and dialer configurations.
+/// Holds test scenarios and dialer configurations.
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct Scenarios {
     #[serde(default)]

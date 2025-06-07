@@ -1,7 +1,7 @@
 use clap::Parser;
 use common::{
     scenarios::{Scenarios, SignalConfig},
-    utils::{parse_key, parse_scenarios_path},
+    utils::{SharedKeysMap, parse_key, parse_scenarios_path},
 };
 use std::{collections::HashMap, net::IpAddr, sync::Arc};
 
@@ -61,7 +61,12 @@ pub struct Args {
 }
 
 impl Args {
-    /// Returns hash map with all signals provided to the app.
+    /// Returns a hash map with all keys provided to the app.
+    pub fn build_keys_map(&self) -> SharedKeysMap {
+        common::utils::build_keys_map(self.scenarios.as_ref(), self.key.as_deref())
+    }
+
+    /// Returns a hash map with all signals provided to the app.
     pub fn build_signals_map(&self) -> SharedSignalsMap {
         let mut result = HashMap::new();
 

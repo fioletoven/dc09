@@ -1,23 +1,34 @@
 use common::dc09::parse_dc09_account_name;
 use common::scenarios::DiallerConfig;
+use common::utils::{SharedKeysMap, get_account_name};
 use std::collections::HashMap;
 
-pub type DiallerKeys = HashMap<String, Option<String>>;
+pub type DiallerKeys = HashMap<String, u16>;
 
 /// Server configuration.
 pub struct ServerConfig {
     pub diallers: DiallerKeys,
-    pub key: Option<String>,
+    pub keys: SharedKeysMap,
     pub send_naks: bool,
 }
 
 impl ServerConfig {
     /// Creates new [`ServerConfig`] instance.
-    pub fn new(diallers: Vec<DiallerConfig>, key: Option<String>, send_naks: bool) -> Self {
-        let diallers = diallers.into_iter().map(|d| (d.name, d.key)).collect::<DiallerKeys>();
+    pub fn new(config: Vec<DiallerConfig>, keys: SharedKeysMap, send_naks: bool) -> Self {
+        let mut diallers = DiallerKeys::new();
+        for (index, dialler) in config.iter().enumerate() {
+            let account = dialler.name.parse::<u32>().ok();
+            let index = (index + 1) as u16;
+
+            for i in 0..dialler.count.max(1) {
+                let account = get_account_name(i, account, &dialler.name, false);
+                diallers.insert(account, index);
+            }
+        }
+
         Self {
             diallers,
-            key,
+            keys,
             send_naks,
         }
     }
@@ -27,11 +38,12 @@ impl ServerConfig {
         if !self.diallers.is_empty() {
             if let Ok(name) = parse_dc09_account_name(received_message) {
                 if self.diallers.contains_key(&name) {
-                    return self.diallers[&name].as_deref();
+                    let index = self.diallers[&name];
+                    return self.keys.get(&index).map(|k| k.as_str());
                 }
             }
         }
 
-        self.key.as_deref()
+        self.keys.get(&0).map(|k| k.as_str())
     }
 }

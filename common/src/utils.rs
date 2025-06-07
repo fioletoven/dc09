@@ -1,6 +1,8 @@
-use std::{fs::File, io::Read, path::Path};
+use std::{collections::HashMap, fs::File, io::Read, path::Path, sync::Arc};
 
 use crate::scenarios::Scenarios;
+
+pub type SharedKeysMap = Arc<HashMap<u16, String>>;
 
 pub const VALID_KEY_LENGTHS: [usize; 3] = [16, 24, 32];
 
@@ -33,4 +35,35 @@ pub fn parse_scenarios_path(s: &str) -> Result<Scenarios, String> {
     }
 
     Err("Unable to deserialize the provided file into a Scenarios object".to_owned())
+}
+
+/// Builds a hash map with all keys provided to the app.
+pub fn build_keys_map(scenarios: Option<&Scenarios>, default_key: Option<&str>) -> SharedKeysMap {
+    let mut result = HashMap::new();
+
+    if let Some(key) = default_key {
+        result.insert(0, key.to_owned());
+    }
+
+    if let Some(scenarios) = scenarios {
+        for (index, dialler) in scenarios.diallers.iter().enumerate() {
+            if let Some(key) = &dialler.key {
+                result.insert((index + 1) as u16, key.to_owned());
+            }
+        }
+    }
+
+    Arc::new(result)
+}
+
+/// Returns account name from either `account_num` (incremented by `index`) or `account_str`.\
+/// **Note** that it will always return `account_str` if fixed.
+pub fn get_account_name(index: u16, account_num: Option<u32>, account_str: &str, fixed: bool) -> String {
+    if fixed {
+        account_str.to_owned()
+    } else {
+        account_num
+            .map(|a| (a + index as u32).to_string())
+            .unwrap_or_else(|| account_str.to_owned())
+    }
 }

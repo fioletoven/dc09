@@ -1,5 +1,5 @@
 use anyhow::Result;
-use common::{dc09::DC09Message, scenarios::SignalConfig};
+use common::{dc09::DC09Message, scenarios::SignalConfig, utils::SharedKeysMap};
 use std::{collections::VecDeque, net::IpAddr, time::Duration};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -17,7 +17,7 @@ pub struct Dialler {
     line_prefix: Option<String>,
     account: String,
     sequence: u16,
-    key: Option<String>,
+    key: Option<(SharedKeysMap, u16)>,
     udp: bool,
     signals: SharedSignalsMap,
     queue: VecDeque<(u16, u16)>,
@@ -59,19 +59,22 @@ impl Dialler {
     }
 
     /// Sets key that is used to decrypt and encrypt DC09 messages.
-    pub fn with_key(mut self, key: Option<String>) -> Self {
-        self.key = key;
+    pub fn with_key(mut self, keys: SharedKeysMap, index: u16) -> Self {
+        self.key = Some((keys, index));
         self
+    }
+
+    /// Returns key that can be used to decrypt and encrypt DC09 messages.
+    pub fn key(&self) -> Option<&str> {
+        self.key
+            .as_ref()
+            .and_then(|(keys, index)| keys.get(index))
+            .map(|x| x.as_str())
     }
 
     /// Adds default signal to the queue.
     pub fn add_default_signal(&mut self) {
         self.queue.push_back((0, 0));
-    }
-
-    /// Sets new account for the dialler.
-    pub fn set_account(&mut self, new_account: String) {
-        self.account = new_account;
     }
 
     /// Gets dialler's account.
@@ -114,7 +117,7 @@ impl Dialler {
         let message = DC09Message::new(token, self.account.clone(), self.sequence, Some(message))
             .with_receiver(self.receiver.clone())
             .with_line_prefix(self.line_prefix.clone());
-        let message = if let Some(key) = self.key.as_deref() {
+        let message = if let Some(key) = self.key() {
             message
                 .to_encrypted(key)
                 .expect("Cannot encrypt DC09 message with provided key")
@@ -137,7 +140,8 @@ impl Dialler {
             tokio::time::sleep(Duration::from_millis(signal.delay.into())).await;
         }
 
-        if let Err(error) = self.send_message(signal.token, signal.message).await {
+        let message = format!("#{}|{}", self.account, signal.message);
+        if let Err(error) = self.send_message(signal.token, message).await {
             log::error!("{}    {}", self.account, error);
             return false;
         }
@@ -185,7 +189,7 @@ impl Dialler {
     }
 
     fn process_ack_message(&self, message: &str) {
-        match DC09Message::try_from(message, self.key.as_deref()) {
+        match DC09Message::try_from(message, self.key()) {
             Ok(msg) => match msg.validate(&self.account, self.sequence) {
                 Ok(_) => log::info!("{} << {}", self.account, message.trim()),
                 Err(e) => log::error!("{} << ({}) {}", self.account, e, message.trim()),

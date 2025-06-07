@@ -9,12 +9,19 @@
         {
             "name": "1235",
             "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-            "scenarios": [ 1 ]
+            "scenarios": [ 1 ],
+            "udp": true
         },
         {
             "name": "1236",
+            "count": 10,
             "key": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-            "scenarios": [ 1 ]
+            "scenarios": [ 2, 1 ]
+        },
+        {
+            "name": "1247",
+            "count": 5,
+            "scenarios": [ 3 ]
         }
     ],
     "scenarios": [
@@ -36,6 +43,35 @@
                     "message": "Nri0/RP0000",
                     "delay": 60000,
                     "repeat": 100
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "sequence": [
+                {
+                    "token": "SIA-DCS",
+                    "message": "Nri0/RP0000",
+                    "delay": 5000
+                },
+                {
+                    "token": "SIA-DCS",
+                    "message": "Nri1/YT000"
+                },
+                                {
+                    "token": "SIA-DCS",
+                    "message": "Nri0/RP0000",
+                    "delay": 5000
+                }
+            ]
+        },
+        {
+            "id": 3,
+            "sequence": [
+                {
+                    "token": "ADM-CID",
+                    "message": "18 1 120 01 007",
+                    "repeat": 10
                 }
             ]
         }
