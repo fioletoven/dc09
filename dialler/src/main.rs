@@ -1,7 +1,10 @@
 use anyhow::Result;
 use clap::Parser;
-use common::scenarios::{Scenarios, SignalConfig};
+use common::scenarios::Scenarios;
 use dialler::Dialler;
+use std::sync::Arc;
+
+use crate::cli::SharedSignalsMap;
 
 mod cli;
 mod dialler;
@@ -20,7 +23,8 @@ async fn main() -> Result<()> {
 }
 
 async fn run_diallers(args: cli::Args) -> Result<()> {
-    let mut diallers = create_diallers(&args);
+    let signals = args.build_signals_map();
+    let mut diallers = build_diallers(&args, signals);
     setup_message_queues(&mut diallers, &args);
 
     let mut tasks = Vec::new();
@@ -36,16 +40,15 @@ async fn run_diallers(args: cli::Args) -> Result<()> {
 }
 
 fn setup_message_queues(diallers: &mut Vec<Dialler>, args: &cli::Args) {
-    let default_signal = SignalConfig::new(args.token.clone(), args.message.clone(), args.repeat);
     for dialler in diallers {
         if let Some(scenarios) = &args.scenarios {
             if scenarios.scenarios.is_empty() {
-                dialler.add_sequence(vec![default_signal.clone()]);
+                dialler.add_default_signal();
             } else {
                 assign_scenarios(dialler, scenarios);
             }
         } else {
-            dialler.add_sequence(vec![default_signal.clone()]);
+            dialler.add_default_signal();
         }
     }
 }
@@ -54,23 +57,29 @@ fn assign_scenarios(dialler: &mut Dialler, scenarios: &Scenarios) {
     if let Some(scenario_ids) = scenarios.get_scenario_ids(dialler.account()) {
         for scenario_id in scenario_ids {
             if let Some(sequence) = scenarios.get_sequence(*scenario_id) {
-                dialler.add_sequence(sequence.clone());
+                let id = *scenario_id + 1;
+                dialler
+                    .queue()
+                    .extend(sequence.iter().enumerate().map(|(i, _)| (id, i as u16)));
             }
         }
     } else {
         for scenario in &scenarios.scenarios {
-            dialler.add_sequence(scenario.sequence.clone());
+            let id = scenario.id + 1;
+            dialler
+                .queue()
+                .extend(scenario.sequence.iter().enumerate().map(|(i, _)| (id, i as u16)));
         }
     }
 }
 
-fn create_diallers(args: &cli::Args) -> Vec<Dialler> {
+fn build_diallers(args: &cli::Args, signals: SharedSignalsMap) -> Vec<Dialler> {
     let mut result = Vec::new();
 
     if let Some(scenarios) = &args.scenarios {
         for dialler in &scenarios.diallers {
             result.push(
-                Dialler::new(args.address, args.port, dialler.name.clone(), args.udp)
+                Dialler::new(args.address, args.port, dialler.name.clone(), Arc::clone(&signals), args.udp)
                     .with_receiver_number(dialler.receiver.clone())
                     .with_line_prefix(dialler.prefix.clone())
                     .with_key(dialler.key.clone())
@@ -81,7 +90,7 @@ fn create_diallers(args: &cli::Args) -> Vec<Dialler> {
 
     if result.is_empty() {
         let account = args.account.parse::<u32>().ok();
-        let dialler = Dialler::new(args.address, args.port, args.account.clone(), args.udp)
+        let dialler = Dialler::new(args.address, args.port, args.account.clone(), Arc::clone(&signals), args.udp)
             .with_key(args.key.clone())
             .with_start_sequence(args.sequence.saturating_sub(1));
 

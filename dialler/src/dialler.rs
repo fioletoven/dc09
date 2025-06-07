@@ -6,6 +6,8 @@ use tokio::{
     net::{TcpStream, UdpSocket},
 };
 
+use crate::cli::SharedSignalsMap;
+
 /// Represents DC09 dialler.
 #[derive(Clone)]
 pub struct Dialler {
@@ -17,12 +19,13 @@ pub struct Dialler {
     sequence: u16,
     key: Option<String>,
     udp: bool,
-    queue: VecDeque<SignalConfig>,
+    signals: SharedSignalsMap,
+    queue: VecDeque<(u16, u16)>,
 }
 
 impl Dialler {
     /// Creates new [`Dialler`] instance.
-    pub fn new(address: IpAddr, port: u16, account: String, use_udp: bool) -> Self {
+    pub fn new(address: IpAddr, port: u16, account: String, signals: SharedSignalsMap, use_udp: bool) -> Self {
         Self {
             address,
             port,
@@ -32,6 +35,7 @@ impl Dialler {
             sequence: 0,
             key: None,
             udp: use_udp,
+            signals,
             queue: VecDeque::new(),
         }
     }
@@ -60,9 +64,9 @@ impl Dialler {
         self
     }
 
-    /// Adds signals sequence to send to the dialler's queue.
-    pub fn add_sequence(&mut self, sequence: Vec<SignalConfig>) {
-        self.queue.extend(sequence);
+    /// Adds default signal to the queue.
+    pub fn add_default_signal(&mut self) {
+        self.queue.push_back((0, 0));
     }
 
     /// Sets new account for the dialler.
@@ -75,19 +79,25 @@ impl Dialler {
         &self.account
     }
 
+    /// Gets dialler's signals queue.
+    pub fn queue(&mut self) -> &mut VecDeque<(u16, u16)> {
+        &mut self.queue
+    }
+
     /// Sends sequence of messages from the queue.\
     /// **Note** that it will stop draining the queue on error.
     pub async fn run_sequence(&mut self) {
         log::info!("{}    start sending signals", self.account);
-        'outer: while let Some(signal) = self.queue.pop_front() {
-            let repeat = signal.repeat.max(1);
-            for _ in 0..repeat {
-                if signal.delay > 50 {
-                    tokio::time::sleep(Duration::from_millis(signal.delay.into())).await;
+        'outer: while let Some(item) = self.queue.pop_front() {
+            if let Some(signal) = self.signals.get(&item).cloned() {
+                let repeat = signal.repeat.max(1) - 1;
+                for _ in 0..repeat {
+                    if !self.send_signal(signal.clone()).await {
+                        break 'outer;
+                    }
                 }
 
-                if let Err(error) = self.send_message(signal.token.clone(), signal.message.clone()).await {
-                    log::error!("{}    {}", self.account, error);
+                if !self.send_signal(signal).await {
                     break 'outer;
                 }
             }
@@ -120,6 +130,19 @@ impl Dialler {
         }
 
         Ok(())
+    }
+
+    async fn send_signal(&mut self, signal: SignalConfig) -> bool {
+        if signal.delay > 50 {
+            tokio::time::sleep(Duration::from_millis(signal.delay.into())).await;
+        }
+
+        if let Err(error) = self.send_message(signal.token, signal.message).await {
+            log::error!("{}    {}", self.account, error);
+            return false;
+        }
+
+        true
     }
 
     async fn send_message_tcp(&mut self, message: String) -> Result<()> {

@@ -34,7 +34,8 @@
                 {
                     "token": "SIA-DCS",
                     "message": "Nri0/RP0000",
-                    "delay": 60000
+                    "delay": 60000,
+                    "repeat": 100
                 }
             ]
         }

@@ -1,9 +1,11 @@
 use clap::Parser;
 use common::{
-    scenarios::Scenarios,
+    scenarios::{Scenarios, SignalConfig},
     utils::{parse_key, parse_scenarios_path},
 };
-use std::net::IpAddr;
+use std::{collections::HashMap, net::IpAddr, sync::Arc};
+
+pub type SharedSignalsMap = Arc<HashMap<(u16, u16), SignalConfig>>;
 
 /// Test client that sends DC09 messages.
 #[derive(Parser, Debug)]
@@ -56,4 +58,25 @@ pub struct Args {
     /// Configuration file specifying defined scenarios for the run.
     #[arg(long, value_parser = parse_scenarios_path)]
     pub scenarios: Option<Scenarios>,
+}
+
+impl Args {
+    /// Returns hash map with all signals provided to the app.
+    pub fn build_signals_map(&self) -> SharedSignalsMap {
+        let mut result = HashMap::new();
+
+        result.insert(
+            (0_u16, 0_u16),
+            SignalConfig::new(self.token.clone(), self.message.clone(), self.repeat),
+        );
+
+        if let Some(scenarios) = &self.scenarios {
+            for scenario in &scenarios.scenarios {
+                let id = scenario.id + 1;
+                result.extend(scenario.sequence.iter().enumerate().map(|(i, s)| ((id, i as u16), s.clone())));
+            }
+        }
+
+        Arc::new(result)
+    }
 }
