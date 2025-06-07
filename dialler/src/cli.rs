@@ -1,9 +1,11 @@
 use clap::Parser;
 use common::{
-    scenarios::Scenarios,
-    utils::{parse_key, parse_scenarios_path},
+    scenarios::{Scenarios, SignalConfig},
+    utils::{SharedKeysMap, parse_key, parse_scenarios_path},
 };
-use std::net::IpAddr;
+use std::{collections::HashMap, net::IpAddr, sync::Arc};
+
+pub type SharedSignalsMap = Arc<HashMap<(u16, u16), SignalConfig>>;
 
 /// Test client that sends DC09 messages.
 #[derive(Parser, Debug)]
@@ -18,12 +20,12 @@ pub struct Args {
     pub port: u16,
 
     /// ID token.
-    #[arg(long, short, default_value = "SIA-DCS")]
+    #[arg(long, short, default_value = "NULL")]
     pub token: String,
 
     /// Message to send.
-    #[arg(long, short, default_value = "#1234|NRR|AStart of dialler")]
-    pub message: String,
+    #[arg(long, short)]
+    pub message: Option<String>,
 
     /// Dialler account number (automatically incremented if possible).
     #[arg(long, short, default_value = "1234")]
@@ -56,4 +58,30 @@ pub struct Args {
     /// Configuration file specifying defined scenarios for the run.
     #[arg(long, value_parser = parse_scenarios_path)]
     pub scenarios: Option<Scenarios>,
+}
+
+impl Args {
+    /// Returns a hash map with all keys provided to the app.
+    pub fn build_keys_map(&self) -> SharedKeysMap {
+        common::utils::build_keys_map(self.scenarios.as_ref(), self.key.as_deref())
+    }
+
+    /// Returns a hash map with all signals provided to the app.
+    pub fn build_signals_map(&self) -> SharedSignalsMap {
+        let mut result = HashMap::new();
+
+        result.insert(
+            (0_u16, 0_u16),
+            SignalConfig::new(self.token.clone(), self.message.clone(), self.repeat),
+        );
+
+        if let Some(scenarios) = &self.scenarios {
+            for scenario in &scenarios.scenarios {
+                let id = scenario.id + 1;
+                result.extend(scenario.sequence.iter().enumerate().map(|(i, s)| ((id, i as u16), s.clone())));
+            }
+        }
+
+        Arc::new(result)
+    }
 }

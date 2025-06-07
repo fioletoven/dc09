@@ -11,7 +11,7 @@ use tokio::net::ToSocketAddrs;
 
 /// Represents type that can be treated as a server.
 pub trait Server: Sized {
-    /// Creates new [`Server`] instance.  
+    /// Creates new [`Server`] instance.\
     /// **Note** that `key` can be provided to decrypt encrypted DC09 messages.
     async fn new(address: impl ToSocketAddrs, config: ServerConfig) -> Result<Self>;
 

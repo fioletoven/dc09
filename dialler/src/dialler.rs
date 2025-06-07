@@ -1,33 +1,55 @@
 use anyhow::Result;
-use common::dc09::DC09Message;
-use std::net::IpAddr;
+use common::{dc09::DC09Message, scenarios::SignalConfig, utils::SharedKeysMap};
+use std::{collections::VecDeque, net::IpAddr, time::Duration};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpStream, UdpSocket},
 };
+
+use crate::cli::SharedSignalsMap;
 
 /// Represents DC09 dialler.
 #[derive(Clone)]
 pub struct Dialler {
     address: IpAddr,
     port: u16,
+    receiver: Option<String>,
+    line_prefix: Option<String>,
     account: String,
     sequence: u16,
-    key: Option<String>,
+    key: Option<(SharedKeysMap, u16)>,
     udp: bool,
+    signals: SharedSignalsMap,
+    queue: VecDeque<(u16, u16)>,
 }
 
 impl Dialler {
     /// Creates new [`Dialler`] instance.
-    pub fn new(address: IpAddr, port: u16, account: String, use_udp: bool) -> Self {
+    pub fn new(address: IpAddr, port: u16, account: String, signals: SharedSignalsMap, use_udp: bool) -> Self {
         Self {
             address,
             port,
+            receiver: None,
+            line_prefix: None,
             account,
             sequence: 0,
             key: None,
             udp: use_udp,
+            signals,
+            queue: VecDeque::new(),
         }
+    }
+
+    /// Sets receiver number to the provided value.
+    pub fn with_receiver_number(mut self, receiver: Option<String>) -> Self {
+        self.receiver = receiver;
+        self
+    }
+
+    /// Sets line prefix to the provided value.
+    pub fn with_line_prefix(mut self, prefix: Option<String>) -> Self {
+        self.line_prefix = prefix;
+        self
     }
 
     /// Sets sequence number to the provided value.
@@ -37,14 +59,52 @@ impl Dialler {
     }
 
     /// Sets key that is used to decrypt and encrypt DC09 messages.
-    pub fn with_key(mut self, key: Option<String>) -> Self {
-        self.key = key;
+    pub fn with_key(mut self, keys: SharedKeysMap, index: u16) -> Self {
+        self.key = Some((keys, index));
         self
     }
 
-    /// Sets new account for the dialler.
-    pub fn set_account(&mut self, new_account: String) {
-        self.account = new_account;
+    /// Returns key that can be used to decrypt and encrypt DC09 messages.
+    pub fn key(&self) -> Option<&str> {
+        self.key
+            .as_ref()
+            .and_then(|(keys, index)| keys.get(index))
+            .map(|x| x.as_str())
+    }
+
+    /// Adds default signal to the queue.
+    pub fn add_default_signal(&mut self) {
+        self.queue.push_back((0, 0));
+    }
+
+    /// Gets dialler's account.
+    pub fn account(&self) -> &str {
+        &self.account
+    }
+
+    /// Gets dialler's signals queue.
+    pub fn queue(&mut self) -> &mut VecDeque<(u16, u16)> {
+        &mut self.queue
+    }
+
+    /// Sends sequence of messages from the queue.\
+    /// **Note** that it will stop draining the queue on error.
+    pub async fn run_sequence(&mut self) {
+        log::info!("{}    start sending signals", self.account);
+        'outer: while let Some(item) = self.queue.pop_front() {
+            if let Some(signal) = self.signals.get(&item).cloned() {
+                let repeat = signal.repeat.max(1) - 1;
+                for _ in 0..repeat {
+                    if !self.send_signal(signal.clone()).await {
+                        break 'outer;
+                    }
+                }
+
+                if !self.send_signal(signal).await {
+                    break 'outer;
+                }
+            }
+        }
     }
 
     /// Sends DC09 message with specified ID token.
@@ -54,8 +114,10 @@ impl Dialler {
             self.sequence = 1;
         }
 
-        let message = DC09Message::new(token, self.account.clone(), self.sequence, Some(message));
-        let message = if let Some(key) = self.key.as_deref() {
+        let message = DC09Message::new(token, self.account.clone(), self.sequence, Some(message))
+            .with_receiver(self.receiver.clone())
+            .with_line_prefix(self.line_prefix.clone());
+        let message = if let Some(key) = self.key() {
             message
                 .to_encrypted(key)
                 .expect("Cannot encrypt DC09 message with provided key")
@@ -63,7 +125,7 @@ impl Dialler {
             message.to_string()
         };
 
-        log::info!("{} connecting to {}:{}", self.account, self.address, self.port);
+        log::info!("{}    connecting to {}:{}", self.account, self.address, self.port);
         if self.udp {
             self.send_message_udp(message).await?;
         } else {
@@ -73,6 +135,20 @@ impl Dialler {
         Ok(())
     }
 
+    async fn send_signal(&mut self, signal: SignalConfig) -> bool {
+        if signal.delay > 50 {
+            tokio::time::sleep(Duration::from_millis(signal.delay.into())).await;
+        }
+
+        let message = signal.message.map(|m| format!("#{}|{}", self.account, m)).unwrap_or_default();
+        if let Err(error) = self.send_message(signal.token, message).await {
+            log::error!("{}    {}", self.account, error);
+            return false;
+        }
+
+        true
+    }
+
     async fn send_message_tcp(&mut self, message: String) -> Result<()> {
         let mut stream = TcpStream::connect((self.address, self.port)).await?;
         stream.write_all(message.as_bytes()).await?;
@@ -80,9 +156,9 @@ impl Dialler {
 
         let mut buffer = [0; 1024];
         match stream.read(&mut buffer).await {
-            Ok(0) => log::error!("{}, connection closed by receiver", self.account),
+            Ok(0) => log::error!("{}    connection closed by receiver", self.account),
             Ok(n) => self.process_ack_buffer(buffer, n),
-            Err(e) => log::error!("{}, failed to read response: {}", self.account, e),
+            Err(e) => log::error!("{}    failed to read response: {}", self.account, e),
         }
 
         stream.shutdown().await?;
@@ -99,7 +175,7 @@ impl Dialler {
         let mut buffer = [0; 1024];
         match socket.recv(&mut buffer).await {
             Ok(n) => self.process_ack_buffer(buffer, n),
-            Err(e) => log::error!("{}, failed to read response: {}", self.account, e),
+            Err(e) => log::error!("{}    failed to read response: {}", self.account, e),
         };
 
         Ok(())
@@ -108,12 +184,12 @@ impl Dialler {
     fn process_ack_buffer(&self, buffer: [u8; 1024], n: usize) {
         match core::str::from_utf8(&buffer[..n]) {
             Ok(ack) => self.process_ack_message(ack),
-            Err(e) => log::error!("{}, received invalid UTF-8 sequence: {}", self.account, e),
+            Err(e) => log::error!("{}    received invalid UTF-8 sequence: {}", self.account, e),
         }
     }
 
     fn process_ack_message(&self, message: &str) {
-        match DC09Message::try_from(message, self.key.as_deref()) {
+        match DC09Message::try_from(message, self.key()) {
             Ok(msg) => match msg.validate(&self.account, self.sequence) {
                 Ok(_) => log::info!("{} << {}", self.account, message.trim()),
                 Err(e) => log::error!("{} << ({}) {}", self.account, e, message.trim()),

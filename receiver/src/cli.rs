@@ -1,7 +1,7 @@
 use clap::Parser;
 use common::{
     scenarios::Scenarios,
-    utils::{parse_key, parse_scenarios_path},
+    utils::{SharedKeysMap, parse_key, parse_scenarios_path},
 };
 use std::net::IpAddr;
 
@@ -28,4 +28,11 @@ pub struct Args {
     /// Configuration file specifying defined scenarios for the run.
     #[arg(long, value_parser = parse_scenarios_path)]
     pub scenarios: Option<Scenarios>,
+}
+
+impl Args {
+    /// Returns a hash map with all keys provided to the app.
+    pub fn build_keys_map(&self) -> SharedKeysMap {
+        common::utils::build_keys_map(self.scenarios.as_ref(), self.key.as_deref())
+    }
 }

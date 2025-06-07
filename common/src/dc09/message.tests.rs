@@ -23,7 +23,7 @@ fn full_test() {
         "SIA-DCS".to_owned(),
         "1234".to_owned(),
         55,
-        Some("#1234|NRR|AStrart".to_owned()),
+        Some("#1234|NRR|AStart".to_owned()),
     )
     .with_line_prefix(Some("L0".to_owned()));
     let parsed = DC09Message::try_from(&msg.to_string(), None).unwrap();

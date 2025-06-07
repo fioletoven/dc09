@@ -2,15 +2,79 @@
     "diallers": [
         {
             "name": "1234",
+            "receiver": "R001",
+            "prefix": "L001",
             "key": null
         },
         {
             "name": "1235",
-            "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "scenarios": [ 1 ],
+            "udp": true
         },
         {
             "name": "1236",
-            "key": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            "count": 10,
+            "key": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "scenarios": [ 2, 1 ]
+        },
+        {
+            "name": "1247",
+            "count": 5,
+            "scenarios": [ 3 ]
+        }
+    ],
+    "scenarios": [
+        {
+            "id": 1,
+            "sequence": [
+                {
+                    "token": "NULL",
+                    "delay": 5000
+                },
+                {
+                    "token": "SIA-DCS",
+                    "message": "NRR|AStart of dialler",
+                    "delay": 25000
+                },
+                {
+                    "token": "NULL",
+                    "delay": 60000,
+                    "repeat": 100
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "sequence": [
+                {
+                    "token": "NULL",
+                    "delay": 5000
+                },
+                {
+                    "token": "SIA-DCS",
+                    "message": "Nri1/BA001",
+                    "delay": 10000
+                },
+                {
+                    "token": "SIA-DCS",
+                    "message": "Nri1/YT000"
+                },
+                {
+                    "token": "NULL",
+                    "delay": 5000
+                }
+            ]
+        },
+        {
+            "id": 3,
+            "sequence": [
+                {
+                    "token": "ADM-CID",
+                    "message": "18 1 120 01 007",
+                    "repeat": 10
+                }
+            ]
         }
     ]
 }

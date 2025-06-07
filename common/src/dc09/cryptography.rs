@@ -3,7 +3,7 @@ use rand::{Rng, distr::Alphanumeric};
 
 const ZEROS_IV: [u8; 16] = [0u8; 16];
 
-/// Encrypts the DC09 message using AES CBC.  
+/// Encrypts the DC09 message using AES CBC.\
 /// **Note** that it adds padding if necessary.
 pub fn encrypt(message: &str, key: &[u8]) -> Option<String> {
     match key.len() {
@@ -14,7 +14,7 @@ pub fn encrypt(message: &str, key: &[u8]) -> Option<String> {
     }
 }
 
-/// Decrypts the DC09 message using AES CBC.  
+/// Decrypts the DC09 message using AES CBC.\
 /// **Note** that it does not remove padding from the message.
 pub fn decrypt(message: &str, key: &[u8]) -> Option<String> {
     let message = hex::decode(message).ok()?;
