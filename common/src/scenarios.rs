@@ -46,7 +46,7 @@ pub struct ScenarioConfig {
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct SignalConfig {
     pub token: String,
-    pub message: String,
+    pub message: Option<String>,
     #[serde(default)]
     pub delay: u16,
     #[serde(default)]
@@ -55,7 +55,7 @@ pub struct SignalConfig {
 
 impl SignalConfig {
     /// Creates new [`SignalConfig`] instance.
-    pub fn new(token: String, message: String, repeat: u16) -> Self {
+    pub fn new(token: String, message: Option<String>, repeat: u16) -> Self {
         Self {
             token,
             message,

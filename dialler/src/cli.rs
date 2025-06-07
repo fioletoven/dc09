@@ -20,12 +20,12 @@ pub struct Args {
     pub port: u16,
 
     /// ID token.
-    #[arg(long, short, default_value = "SIA-DCS")]
+    #[arg(long, short, default_value = "NULL")]
     pub token: String,
 
     /// Message to send.
-    #[arg(long, short, default_value = "#1234|NRR|AStart of dialler")]
-    pub message: String,
+    #[arg(long, short)]
+    pub message: Option<String>,
 
     /// Dialler account number (automatically incremented if possible).
     #[arg(long, short, default_value = "1234")]

@@ -29,18 +29,16 @@
             "id": 1,
             "sequence": [
                 {
-                    "token": "SIA-DCS",
-                    "message": "Nri0/RP0000",
+                    "token": "NULL",
                     "delay": 5000
                 },
                 {
                     "token": "SIA-DCS",
-                    "message": "Nri1/BA001",
+                    "message": "NRR|AStart of dialler",
                     "delay": 25000
                 },
                 {
-                    "token": "SIA-DCS",
-                    "message": "Nri0/RP0000",
+                    "token": "NULL",
                     "delay": 60000,
                     "repeat": 100
                 }
@@ -50,17 +48,20 @@
             "id": 2,
             "sequence": [
                 {
-                    "token": "SIA-DCS",
-                    "message": "Nri0/RP0000",
+                    "token": "NULL",
                     "delay": 5000
+                },
+                {
+                    "token": "SIA-DCS",
+                    "message": "Nri1/BA001",
+                    "delay": 10000
                 },
                 {
                     "token": "SIA-DCS",
                     "message": "Nri1/YT000"
                 },
-                                {
-                    "token": "SIA-DCS",
-                    "message": "Nri0/RP0000",
+                {
+                    "token": "NULL",
                     "delay": 5000
                 }
             ]
