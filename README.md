@@ -93,6 +93,8 @@ It is possible to provide a JSON scenario file to the `Dialler` and `Receiver` s
 The JSON file defines a collection of diallers and their associated test scenarios, including sequences of signals to be sent during testing.  
 The `Receiver` simulator uses only **diallers** array to get `name` and `key` properties for configured diallers.
 
+Example scenarios file: [scenarios.json](./examples/scenarios.json).
+
 ### JSON Structure
 
 #### Root Object

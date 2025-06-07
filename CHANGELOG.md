@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.1.4 - 2025-06-07
+
+### Features
+
+- allow defining signal sequences in scenario files for the dialler simulator
+
 ## 0.1.3 - 2025-05-25
 
 ### Features
