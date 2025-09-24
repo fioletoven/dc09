@@ -80,7 +80,7 @@ jobs:
         version="${{ needs.create-release.outputs.tag }}"
         version="${version#v}"
         staging="${{ env.PROJECT_NAME }}-${version}-${{ matrix.target-short }}"
-        mkdir -p "$staging"
+        mkdir -p "$staging/examples"
         cp {README.md,LICENSE,CHANGELOG.md} "$staging/"
         cp examples/* "$staging/examples/"
         if [ "${{ matrix.os }}" = "windows-2022" ]; then
