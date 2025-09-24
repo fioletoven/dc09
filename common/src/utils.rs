@@ -24,13 +24,13 @@ pub fn parse_scenarios_path(s: &str) -> Result<Scenarios, String> {
 
     if let Ok(mut file) = File::open(path) {
         let mut scenarios_str = String::new();
-        if file.read_to_string(&mut scenarios_str).is_ok() {
-            if let Ok(scenarios) = serde_json::from_str::<Scenarios>(&scenarios_str) {
-                return match scenarios.validate() {
-                    Ok(_) => Ok(scenarios),
-                    Err(e) => Err(e),
-                };
-            }
+        if file.read_to_string(&mut scenarios_str).is_ok()
+            && let Ok(scenarios) = serde_json::from_str::<Scenarios>(&scenarios_str)
+        {
+            return match scenarios.validate() {
+                Ok(_) => Ok(scenarios),
+                Err(e) => Err(e),
+            };
         }
     }
 

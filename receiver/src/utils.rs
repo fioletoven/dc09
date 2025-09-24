@@ -2,13 +2,15 @@ use common::dc09::DC09Message;
 
 pub fn build_response_message(msg: DC09Message, key: Option<&str>, nak: bool) -> String {
     let was_encrypted = msg.was_encrypted();
+    let response = if nak {
+        DC09Message::nak()
+    } else {
+        DC09Message::ack(msg.account, msg.sequence)
+            .with_receiver(msg.receiver)
+            .with_line_prefix(msg.line_prefix)
+    };
 
-    let token = if nak { "NAK".to_owned() } else { "ACK".to_owned() };
-    let response = DC09Message::ack(token, msg.account, msg.sequence)
-        .with_receiver(msg.receiver)
-        .with_line_prefix(msg.line_prefix);
-
-    if was_encrypted {
+    if was_encrypted && !nak {
         if let Some(key) = key {
             response
                 .to_encrypted(key)

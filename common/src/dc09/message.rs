@@ -35,9 +35,17 @@ impl DC09Message {
         }
     }
 
-    /// Creates new acknowledgement [`DC09Message`] instance with ID token and timestamp.
-    pub fn ack(token: String, account: String, sequence: u16) -> Self {
-        Self::new(token, account, sequence, None).with_timestamp(OffsetDateTime::now_utc())
+    /// Creates new acknowledgement [`DC09Message`] instance.
+    pub fn ack(account: String, sequence: u16) -> Self {
+        Self::new("ACK".to_owned(), account, sequence, None).with_timestamp(OffsetDateTime::now_utc())
+    }
+
+    /// Creates new negative acknowledgement [`DC09Message`] instance.
+    pub fn nak() -> Self {
+        Self::new("NAK".to_owned(), "A0".to_owned(), 0, None)
+            .with_receiver(Some("R0".to_owned()))
+            .with_line_prefix(Some("L0".to_owned()))
+            .with_timestamp(OffsetDateTime::now_utc())
     }
 
     // Adds UTC timestamp to the DC09 message.
@@ -50,10 +58,10 @@ impl DC09Message {
     /// Adds Receiver to the DC09 message.\
     /// **Note** that it should contain `R` as a prefix.
     pub fn with_receiver(mut self, receiver: Option<String>) -> Self {
-        if let Some(receiver) = receiver {
-            if receiver.chars().next().is_some_and(|ch| ch == 'R') {
-                self.receiver = Some(receiver);
-            }
+        if let Some(receiver) = receiver
+            && receiver.chars().next().is_some_and(|ch| ch == 'R')
+        {
+            self.receiver = Some(receiver);
         }
         self
     }
@@ -61,10 +69,10 @@ impl DC09Message {
     /// Adds Line Prefix to the DC09 message.\
     /// **Note** that it should contain `L` as a prefix.
     pub fn with_line_prefix(mut self, line_prefix: Option<String>) -> Self {
-        if let Some(line_prefix) = line_prefix {
-            if line_prefix.chars().next().is_some_and(|ch| ch == 'L') {
-                self.line_prefix = Some(line_prefix);
-            }
+        if let Some(line_prefix) = line_prefix
+            && line_prefix.chars().next().is_some_and(|ch| ch == 'L')
+        {
+            self.line_prefix = Some(line_prefix);
         }
         self
     }
@@ -76,7 +84,9 @@ impl DC09Message {
 
     /// Validates account and sequence numbers in the DC09 message.
     pub fn validate(&self, account: &str, sequence: u16) -> Result<(), DC09Error> {
-        if self.sequence != sequence {
+        if self.token == "NAK" {
+            Ok(())
+        } else if self.sequence != sequence {
             Err(DC09Error::InvalidSequenceNumber)
         } else if self.account != account {
             Err(DC09Error::InvalidAccountNumber)
@@ -145,12 +155,14 @@ impl DC09Message {
 
 impl Display for DC09Message {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let account_prefix = if self.token == "NAK" { "" } else { "#" };
         let body = format!(
-            "\"{}\"{:04}{}{}#{}{}",
+            "\"{}\"{:04}{}{}{}{}{}",
             self.token,
             self.sequence,
             self.receiver.as_deref().unwrap_or(""),
             self.line_prefix.as_deref().unwrap_or("L0"),
+            account_prefix,
             self.account,
             self.get_payload(),
         );

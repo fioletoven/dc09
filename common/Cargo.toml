@@ -2,6 +2,7 @@
 name = "common"
 version = "0.1.4"
 edition = "2024"
+rust-version = "1.88"
 
 [dependencies]
 aes = { version = "0.8" }

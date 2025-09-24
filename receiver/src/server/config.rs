@@ -35,13 +35,12 @@ impl ServerConfig {
 
     /// Returns key for the specified message.
     pub fn get_key_for_message(&self, received_message: &str) -> Option<&str> {
-        if !self.diallers.is_empty() {
-            if let Ok(name) = parse_dc09_account_name(received_message) {
-                if self.diallers.contains_key(&name) {
-                    let index = self.diallers[&name];
-                    return self.keys.get(&index).map(|k| k.as_str());
-                }
-            }
+        if !self.diallers.is_empty()
+            && let Ok(name) = parse_dc09_account_name(received_message)
+            && self.diallers.contains_key(&name)
+        {
+            let index = self.diallers[&name];
+            return self.keys.get(&index).map(|k| k.as_str());
         }
 
         self.keys.get(&0).map(|k| k.as_str())
