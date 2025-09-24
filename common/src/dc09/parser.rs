@@ -1,5 +1,6 @@
 use nom::{
     IResult, Parser,
+    branch::alt,
     bytes::complete::{tag, take_till, take_until, take_while_m_n, take_while1},
     combinator::{map, map_res, opt},
     multi::many0,
@@ -136,7 +137,7 @@ struct ParsedPayload<'a> {
 }
 
 /// Parses DC09 message header.
-fn parse_dc09_header(input: &str) -> IResult<&str, ParsedHeader> {
+fn parse_dc09_header(input: &'_ str) -> IResult<&'_ str, ParsedHeader<'_>> {
     map(
         (
             tag("\n"),
@@ -144,11 +145,12 @@ fn parse_dc09_header(input: &str) -> IResult<&str, ParsedHeader> {
             parse_hex,
             parse_token,
             parse_sequence,
-            opt(parse_receiver),
-            opt(parse_account_prefix),
-            parse_account,
+            alt((
+                fixed_nak_account,
+                (opt(parse_receiver), opt(parse_account_prefix), parse_account),
+            )),
         ),
-        |(_, crc, len, token, sequence, receiver, line_prefix, account)| ParsedHeader {
+        |(_, crc, len, token, sequence, (receiver, line_prefix, account))| ParsedHeader {
             crc,
             len,
             token,
@@ -162,7 +164,7 @@ fn parse_dc09_header(input: &str) -> IResult<&str, ParsedHeader> {
 }
 
 /// Parses decrypted DC09 message payload.
-fn parse_dc09_payload(input: &str) -> IResult<&str, ParsedPayload> {
+fn parse_dc09_payload(input: &'_ str) -> IResult<&'_ str, ParsedPayload<'_>> {
     map(
         (
             parse_data,
@@ -195,6 +197,11 @@ fn parse_token(input: &str) -> IResult<&str, &str> {
 /// Parses a DC09 sequence number (4-digit number).
 fn parse_sequence(input: &str) -> IResult<&str, u16> {
     map_res(take_while_m_n(4, 4, |c: char| c.is_ascii_digit()), |s: &str| s.parse::<u16>()).parse(input)
+}
+
+/// Parses fixed account for NAK messages: `R0L0A0`.
+fn fixed_nak_account(input: &'_ str) -> IResult<&'_ str, (Option<&'_ str>, Option<&'_ str>, &'_ str)> {
+    map((tag("R0"), tag("L0"), tag("A0")), |(_, _, account)| (None, None, account)).parse(input)
 }
 
 /// Parses a DC09 receiver number (1-6 hex number).

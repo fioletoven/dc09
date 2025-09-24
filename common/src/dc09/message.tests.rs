@@ -10,11 +10,18 @@ fn to_string_test() {
 }
 
 #[test]
-fn parse_test() {
+fn parse_message_test() {
     let msg = DC09Message::new("SIA-DCS".to_owned(), "1234".to_owned(), 1, None).with_line_prefix(Some("L0".to_owned()));
     let parsed = DC09Message::try_from("\n96ED0016\"SIA-DCS\"0001L0#1234[]\r", None).unwrap();
 
     assert_eq!(msg, parsed);
+}
+
+#[test]
+fn parse_nak_test() {
+    let parsed = DC09Message::try_from("\nE4410025\"NAK\"0000R0L0A0[]_16:20:01,09-24-2025\r", None).unwrap();
+    assert_eq!("NAK", parsed.token);
+    assert_eq!("A0", parsed.account);
 }
 
 #[test]

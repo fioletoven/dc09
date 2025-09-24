@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.1.5 - 2025-09-24
+
+### Bug fixes
+
+- fix NAK message handling to conform to the SIA DC-09 specification
+
 ## 0.1.4 - 2025-06-07
 
 ### Features

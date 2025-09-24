@@ -1,7 +1,8 @@
 [package]
 name = "receiver"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2024"
+rust-version = "1.88"
 
 [dependencies]
 anyhow = { version = "1.0" }

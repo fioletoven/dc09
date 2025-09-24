@@ -119,7 +119,7 @@ Each entry in the `diallers` array represents a dialler configuration with the f
 | `sequence` | Integer  | Sequence number start for the messages.                | No       |
 | `udp`      | Boolean  | Indicates if UDP protocol is used (`true` or `false`). | No       |
 
-> If `scenarios` is not specified, the dialer will use the token and message provided on the command line.
+> If `scenarios` is not specified, the dialler will use the token and message provided on the command line.
 
 #### Scenarios
 

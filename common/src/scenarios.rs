@@ -65,7 +65,7 @@ impl SignalConfig {
     }
 }
 
-/// Holds test scenarios and dialer configurations.
+/// Holds test scenarios and dialler configurations.
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct Scenarios {
     #[serde(default)]
@@ -91,10 +91,10 @@ impl Scenarios {
     /// Checks whether [`Scenarios`] contains valid and meaningful data.
     pub fn validate(&self) -> Result<(), String> {
         for dialler in &self.diallers {
-            if let Some(key) = &dialler.key {
-                if !VALID_KEY_LENGTHS.contains(&key.len()) {
-                    return Err(format!("{}: key length must be 16, 24 or 32 bytes", dialler.name));
-                }
+            if let Some(key) = &dialler.key
+                && !VALID_KEY_LENGTHS.contains(&key.len())
+            {
+                return Err(format!("{}: key length must be 16, 24 or 32 bytes", dialler.name));
             }
         }
 
