@@ -1,5 +1,5 @@
 use anyhow::Result;
-use common::{dc09::DC09Message, scenarios::SignalConfig, utils::SharedKeysMap};
+use common::{dc09::DC09Message, scenarios::SignalConfig, time::OffsetDateTime, utils::SharedKeysMap};
 use std::{collections::VecDeque, net::IpAddr, time::Duration};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -119,6 +119,7 @@ impl Dialler {
             .with_line_prefix(self.line_prefix.clone());
         let message = if let Some(key) = self.key() {
             message
+                .with_timestamp(OffsetDateTime::now_utc())
                 .to_encrypted(key)
                 .expect("Cannot encrypt DC09 message with provided key")
         } else {
