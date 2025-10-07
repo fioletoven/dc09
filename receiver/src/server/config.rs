@@ -14,7 +14,7 @@ pub struct ServerConfig {
 
 impl ServerConfig {
     /// Creates new [`ServerConfig`] instance.
-    pub fn new(config: Vec<DiallerConfig>, keys: SharedKeysMap, send_naks: bool) -> Self {
+    pub fn new(config: &[DiallerConfig], keys: SharedKeysMap, send_naks: bool) -> Self {
         let mut diallers = DiallerKeys::new();
         for (index, dialler) in config.iter().enumerate() {
             let account = dialler.name.parse::<u32>().ok();
@@ -40,9 +40,9 @@ impl ServerConfig {
             && self.diallers.contains_key(&name)
         {
             let index = self.diallers[&name];
-            return self.keys.get(&index).map(|k| k.as_str());
+            return self.keys.get(&index).map(String::as_str);
         }
 
-        self.keys.get(&0).map(|k| k.as_str())
+        self.keys.get(&0).map(String::as_str)
     }
 }

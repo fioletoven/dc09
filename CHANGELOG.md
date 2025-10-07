@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.1.6 - 2025-10-07
+
+### Bug fixes
+
+- always add timestamp to encrypted messages
+
 ## 0.1.5 - 2025-09-24
 
 ### Bug fixes

@@ -1,5 +1,5 @@
 use anyhow::Result;
-use common::{dc09::DC09Message, scenarios::SignalConfig, utils::SharedKeysMap};
+use common::{dc09::DC09Message, scenarios::SignalConfig, time::OffsetDateTime, utils::SharedKeysMap};
 use std::{collections::VecDeque, net::IpAddr, time::Duration};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -69,7 +69,7 @@ impl Dialler {
         self.key
             .as_ref()
             .and_then(|(keys, index)| keys.get(index))
-            .map(|x| x.as_str())
+            .map(String::as_str)
     }
 
     /// Adds default signal to the queue.
@@ -119,6 +119,7 @@ impl Dialler {
             .with_line_prefix(self.line_prefix.clone());
         let message = if let Some(key) = self.key() {
             message
+                .with_timestamp(OffsetDateTime::now_utc())
                 .to_encrypted(key)
                 .expect("Cannot encrypt DC09 message with provided key")
         } else {
@@ -157,7 +158,7 @@ impl Dialler {
         let mut buffer = [0; 1024];
         match stream.read(&mut buffer).await {
             Ok(0) => log::error!("{}    connection closed by receiver", self.account),
-            Ok(n) => self.process_ack_buffer(buffer, n),
+            Ok(n) => self.process_ack_buffer(&buffer, n),
             Err(e) => log::error!("{}    failed to read response: {}", self.account, e),
         }
 
@@ -174,14 +175,14 @@ impl Dialler {
 
         let mut buffer = [0; 1024];
         match socket.recv(&mut buffer).await {
-            Ok(n) => self.process_ack_buffer(buffer, n),
+            Ok(n) => self.process_ack_buffer(&buffer, n),
             Err(e) => log::error!("{}    failed to read response: {}", self.account, e),
-        };
+        }
 
         Ok(())
     }
 
-    fn process_ack_buffer(&self, buffer: [u8; 1024], n: usize) {
+    fn process_ack_buffer(&self, buffer: &[u8; 1024], n: usize) {
         match core::str::from_utf8(&buffer[..n]) {
             Ok(ack) => self.process_ack_message(ack),
             Err(e) => log::error!("{}    received invalid UTF-8 sequence: {}", self.account, e),
@@ -191,10 +192,10 @@ impl Dialler {
     fn process_ack_message(&self, message: &str) {
         match DC09Message::try_from(message, self.key()) {
             Ok(msg) => match msg.validate(&self.account, self.sequence) {
-                Ok(_) => log::info!("{} << {}", self.account, message.trim()),
+                Ok(()) => log::info!("{} << {}", self.account, message.trim()),
                 Err(e) => log::error!("{} << ({}) {}", self.account, e, message.trim()),
             },
             Err(e) => log::error!("{} << ({}) {}", self.account, e, message.trim()),
-        };
+        }
     }
 }

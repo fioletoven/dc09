@@ -103,12 +103,12 @@ pub fn parse_dc09(input: &str, key: Option<&str>) -> Result<DC09Message, DC09Err
 fn validate(input: &str, len: u16, crc: u16) -> Result<(), DC09Error> {
     let message_len = usize::from(len);
     // [\n] + [4 (crc)] + [4 (len)] + [\r] = 10
-    if message_len != (input.len() - 10) {
-        Err(DC09Error::InvalidLength)
-    } else {
+    if message_len == (input.len() - 10) {
         // [\n] + [4 (crc)] + [4 (len)] = 9
         let new_crc = calculate_crc(&input[9..(message_len + 9)]);
-        if crc != new_crc { Err(DC09Error::InvalidCrc) } else { Ok(()) }
+        if crc == new_crc { Ok(()) } else { Err(DC09Error::InvalidCrc) }
+    } else {
+        Err(DC09Error::InvalidLength)
     }
 }
 
