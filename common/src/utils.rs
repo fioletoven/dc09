@@ -28,7 +28,7 @@ pub fn parse_scenarios_path(s: &str) -> Result<Scenarios, String> {
             && let Ok(scenarios) = serde_json::from_str::<Scenarios>(&scenarios_str)
         {
             return match scenarios.validate() {
-                Ok(_) => Ok(scenarios),
+                Ok(()) => Ok(scenarios),
                 Err(e) => Err(e),
             };
         }
@@ -62,8 +62,6 @@ pub fn get_account_name(index: u16, account_num: Option<u32>, account_str: &str,
     if fixed {
         account_str.to_owned()
     } else {
-        account_num
-            .map(|a| (a + index as u32).to_string())
-            .unwrap_or_else(|| account_str.to_owned())
+        account_num.map_or_else(|| account_str.to_owned(), |a| (a + u32::from(index)).to_string())
     }
 }

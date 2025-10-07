@@ -128,7 +128,7 @@ impl DC09Message {
     }
 
     fn get_payload(&self) -> String {
-        let len = self.data.as_ref().map(|d| d.len() + 2).unwrap_or(2);
+        let len = self.data.as_ref().map_or(2, |d| d.len() + 2);
         let len = self.extended.iter().map(|e| e.len() + 2).sum::<usize>() + len + 21; // + timestamp
         let mut payload = String::with_capacity(len);
 

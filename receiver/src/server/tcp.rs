@@ -36,10 +36,10 @@ impl Server for TcpServer {
             match self.listener.accept().await {
                 Ok((stream, addr)) => {
                     self.connections
-                        .push(tokio::spawn(process_connection(stream, addr, Arc::clone(&self.config))))
+                        .push(tokio::spawn(process_connection(stream, addr, Arc::clone(&self.config))));
                 },
                 Err(e) => log::error!("error accepting connection: {}", e),
-            };
+            }
 
             if self.connections.len() > 1_000 {
                 self.connections.retain(|t| !t.is_finished());
@@ -56,7 +56,7 @@ async fn process_connection(mut socket: TcpStream, addr: SocketAddr, config: Arc
         match socket.read(&mut buffer).await {
             Ok(0) => {
                 match socket.shutdown().await {
-                    Ok(_) => log::debug!("connection closed by {}", addr),
+                    Ok(()) => log::debug!("connection closed by {}", addr),
                     Err(e) => log::warn!("error while socket shutdown: {}", e),
                 }
 
@@ -81,7 +81,7 @@ async fn process_connection(mut socket: TcpStream, addr: SocketAddr, config: Arc
     }
 
     match socket.shutdown().await {
-        Ok(_) => log::debug!("connection closed for {}", addr),
+        Ok(()) => log::debug!("connection closed for {}", addr),
         Err(e) => log::warn!("error while socket shutdown: {}", e),
     }
 }

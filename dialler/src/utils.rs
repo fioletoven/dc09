@@ -10,7 +10,7 @@ use crate::{
 };
 
 /// Creates all diallers from the scenarios file and command line parameters.
-pub fn create_diallers(args: &Args, signals: SharedSignalsMap, keys: SharedKeysMap) -> Vec<Dialler> {
+pub fn create_diallers(args: &Args, signals: &SharedSignalsMap, keys: &SharedKeysMap) -> Vec<Dialler> {
     let mut result = Vec::new();
 
     if let Some(scenarios) = &args.scenarios {
@@ -19,8 +19,8 @@ pub fn create_diallers(args: &Args, signals: SharedSignalsMap, keys: SharedKeysM
                 args.address,
                 args.port,
                 dialler,
-                Arc::clone(&signals),
-                Arc::clone(&keys),
+                signals,
+                keys,
                 (index + 1) as u16,
                 args.fixed,
             ));
@@ -82,8 +82,8 @@ fn build_diallers(
     address: IpAddr,
     port: u16,
     config: &DiallerConfig,
-    signals: SharedSignalsMap,
-    keys: SharedKeysMap,
+    signals: &SharedSignalsMap,
+    keys: &SharedKeysMap,
     index: u16,
     fixed: bool,
 ) -> Vec<Dialler> {
@@ -94,10 +94,10 @@ fn build_diallers(
         let account = get_account_name(i, account, &config.name, fixed);
 
         result.push(
-            Dialler::new(address, port, account, Arc::clone(&signals), config.udp)
+            Dialler::new(address, port, account, Arc::clone(signals), config.udp)
                 .with_receiver_number(config.receiver.clone())
                 .with_line_prefix(config.prefix.clone())
-                .with_key(Arc::clone(&keys), index)
+                .with_key(Arc::clone(keys), index)
                 .with_start_sequence(config.sequence.saturating_sub(1)),
         );
     }
