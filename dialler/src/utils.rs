@@ -42,7 +42,7 @@ pub fn create_diallers(args: &Args, signals: &SharedSignalsMap, keys: &SharedKey
         ));
     }
 
-    update_timeouts(result, args.timeout)
+    set_timeouts(result, args.timeout.into())
 }
 
 /// Assigns messages from the scenarios to the particular dialler queues.
@@ -107,8 +107,7 @@ fn build_diallers(
     result
 }
 
-fn update_timeouts(mut diallers: Vec<Dialler>, timeout: Option<u16>) -> Vec<Dialler> {
-    let secs = timeout.map(u64::from).unwrap_or(1);
+fn set_timeouts(mut diallers: Vec<Dialler>, secs: u64) -> Vec<Dialler> {
     let timeout = if secs == 0 { None } else { Some(Duration::from_secs(secs)) };
 
     for dialler in &mut diallers {

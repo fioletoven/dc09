@@ -68,8 +68,8 @@ pub struct Args {
     pub scenarios: Option<Scenarios>,
 
     /// Timeout for waiting for a response, in seconds.
-    #[arg(long)]
-    pub timeout: Option<u16>,
+    #[arg(long, default_value_t = 1)]
+    pub timeout: u16,
 }
 
 impl Args {
