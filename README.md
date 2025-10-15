@@ -38,6 +38,7 @@ The application uses the following arguments, configurable via the command line:
 | `--key`, `-k`      | Encryption key for DC09 messages (16, 24, or 32 bytes)        | `None`        | --key "my16bytekey1234567890abcdef" |
 | `--udp`, `-u`      | Use a UDP connection instead of a TCP one                     | false         | --udp                               |
 | `--scenarios`      | Configuration file specifying defined scenarios for the run   | `None`        | --scenarios examples/scenarios.json |
+| `--timeout`        | Timeout for waiting for a response, in seconds                | `None`        | --timeout 10                        |
 
 #### Example commands
 
