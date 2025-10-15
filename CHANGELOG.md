@@ -1,5 +1,12 @@
 # Change Log
 
+## 0.1.7 - 2025-10-15
+
+### Features
+
+- add configurable timeout for waiting for a response (defaults to 1s; use 0 to wait indefinitely)
+- add support for specifying account prefix (receiver line number) and receiver number via CLI
+
 ## 0.1.6 - 2025-10-07
 
 ### Bug fixes
