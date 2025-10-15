@@ -108,7 +108,8 @@ fn build_diallers(
 }
 
 fn update_timeouts(mut diallers: Vec<Dialler>, timeout: Option<u16>) -> Vec<Dialler> {
-    let timeout = timeout.map(|t| Duration::from_secs(t.into()));
+    let secs = timeout.map(u64::from).unwrap_or(1);
+    let timeout = if secs == 0 { None } else { Some(Duration::from_secs(secs)) };
 
     for dialler in &mut diallers {
         dialler.set_timeout(timeout);

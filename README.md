@@ -38,7 +38,7 @@ The application uses the following arguments, configurable via the command line:
 | `--key`, `-k`      | Encryption key for DC09 messages (16, 24, or 32 bytes)        | `None`        | --key "my16bytekey1234567890abcdef" |
 | `--udp`, `-u`      | Use a UDP connection instead of a TCP one                     | false         | --udp                               |
 | `--scenarios`      | Configuration file specifying defined scenarios for the run   | `None`        | --scenarios examples/scenarios.json |
-| `--timeout`        | Timeout for waiting for a response, in seconds                | `None`        | --timeout 10                        |
+| `--timeout`        | Timeout for waiting for a response, in seconds                | 1             | --timeout 10                        |
 
 #### Example commands
 
@@ -52,6 +52,12 @@ Send an encrypted message with a custom account and sequence number:
 
 ```sh
 ./dialler --account 5678 --sequence 100 --key "my16bytekey1234567890abcdef"
+```
+
+Send a NULL message and wait indefinitely for a response:
+
+```sh
+./dialler --account 1234 --line L02 --receiver R001 --timeout 0
 ```
 
 ## Receiver simulator
