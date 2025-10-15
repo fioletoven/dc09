@@ -29,10 +29,12 @@ The application uses the following arguments, configurable via the command line:
 | `--token`, `-t`    | ID token for the DC09 message                                 | NULL          | --token ADM-CID                     |
 | `--message`, `-m`  | Message content to send                                       | `None`        | --message "NRR\|AStart of dialler"  |
 | `--account`, `-a`  | Dialler account number (automatically incremented if possible)| 1234          | --account 5678                      |
+| `--line`, `-l`     | Receiver line number (account prefix)                         | `None`        | --line L01                          |
+| `--receiver`, `-r` | Receiver number                                               | `None`        | --receiver R01                      |
 | `--fixed`, `-f`    | Ensure that the account number is fixed across all diallers   | false         | --fixed                             |
 | `--sequence`, `-s` | Message sequence start number                                 | 1             | --sequence 100                      |
 | `--diallers`, `-d` | Number of diallers to create                                  | 1             | --diallers 20                       |
-| `--repeat`, `-r`   | Number of times to repeat the message per dialler             | 1             | --repeat 5                          |
+| `--repeat`, `-c`   | Number of times to repeat the message per dialler             | 1             | --repeat 5                          |
 | `--key`, `-k`      | Encryption key for DC09 messages (16, 24, or 32 bytes)        | `None`        | --key "my16bytekey1234567890abcdef" |
 | `--udp`, `-u`      | Use a UDP connection instead of a TCP one                     | false         | --udp                               |
 | `--scenarios`      | Configuration file specifying defined scenarios for the run   | `None`        | --scenarios examples/scenarios.json |

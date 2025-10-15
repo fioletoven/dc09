@@ -99,6 +99,28 @@ pub fn parse_dc09(input: &str, key: Option<&str>) -> Result<DC09Message, DC09Err
     }
 }
 
+/// Validates account prefix (receiver line number) and returns `true` on success.
+pub fn is_account_prefix_valid(input: &str) -> bool {
+    if let Ok((_, line)) = parse_account_prefix(input)
+        && line.len() == input.len().saturating_sub(1)
+    {
+        return true;
+    }
+
+    false
+}
+
+/// Validates receiver number and returns `true` on success.
+pub fn is_receiver_valid(input: &str) -> bool {
+    if let Ok((_, line)) = parse_receiver(input)
+        && line.len() == input.len().saturating_sub(1)
+    {
+        return true;
+    }
+
+    false
+}
+
 /// Validates length and CRC of the parsed message.
 fn validate(input: &str, len: u16, crc: u16) -> Result<(), DC09Error> {
     let message_len = usize::from(len);

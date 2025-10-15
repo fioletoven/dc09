@@ -1,7 +1,7 @@
 use clap::Parser;
 use common::{
     scenarios::{Scenarios, SignalConfig},
-    utils::{SharedKeysMap, parse_key, parse_scenarios_path},
+    utils::{SharedKeysMap, parse_account_prefix, parse_key, parse_receiver, parse_scenarios_path},
 };
 use std::{collections::HashMap, net::IpAddr, sync::Arc};
 
@@ -31,6 +31,14 @@ pub struct Args {
     #[arg(long, short, default_value = "1234")]
     pub account: String,
 
+    /// Receiver line number (account prefix).
+    #[arg(long, short, value_parser = parse_account_prefix)]
+    pub line: Option<String>,
+
+    /// Receiver number.
+    #[arg(long, short, value_parser = parse_receiver)]
+    pub receiver: Option<String>,
+
     /// Ensure that the account number is fixed across all diallers.
     #[arg(long, short)]
     pub fixed: bool,
@@ -44,7 +52,7 @@ pub struct Args {
     pub diallers: u16,
 
     /// Repeat message the specified number of times per dialler.
-    #[arg(long, short, default_value_t = 1)]
+    #[arg(long, short('c'), default_value_t = 1)]
     pub repeat: u16,
 
     /// Key to encrypt DC09 messages (16, 24 or 32 bytes long).

@@ -28,7 +28,9 @@ pub fn create_diallers(args: &Args, signals: &SharedSignalsMap, keys: &SharedKey
     }
 
     if result.is_empty() {
-        let dialler = DiallerConfig::new(args.account.clone(), args.sequence, args.udp, args.diallers);
+        let dialler = DiallerConfig::new(args.account.clone(), args.sequence, args.udp, args.diallers)
+            .with_line_number(args.line.clone())
+            .with_receiver_number(args.receiver.clone());
         result.extend(build_diallers(
             args.address,
             args.port,
