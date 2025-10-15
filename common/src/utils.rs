@@ -1,6 +1,9 @@
 use std::{collections::HashMap, fs::File, io::Read, path::Path, sync::Arc};
 
-use crate::scenarios::Scenarios;
+use crate::{
+    dc09::{is_account_prefix_valid, is_receiver_valid},
+    scenarios::Scenarios,
+};
 
 pub type SharedKeysMap = Arc<HashMap<u16, String>>;
 
@@ -11,7 +14,25 @@ pub fn parse_key(s: &str) -> Result<String, String> {
     if VALID_KEY_LENGTHS.contains(&s.len()) {
         Ok(s.to_owned())
     } else {
-        Err("Key length must be 16, 24 or 32 bytes".to_owned())
+        Err("key length must be 16, 24 or 32 bytes".to_owned())
+    }
+}
+
+/// Parses and validates account prefix (receiver line number).
+pub fn parse_account_prefix(s: &str) -> Result<String, String> {
+    if is_account_prefix_valid(s) {
+        Ok(s.to_owned())
+    } else {
+        Err("invalid account prefix (receiver line number)".to_owned())
+    }
+}
+
+/// Parses and validates receiver number.
+pub fn parse_receiver(s: &str) -> Result<String, String> {
+    if is_receiver_valid(s) {
+        Ok(s.to_owned())
+    } else {
+        Err("invalid receiver number".to_owned())
     }
 }
 
@@ -19,7 +40,7 @@ pub fn parse_key(s: &str) -> Result<String, String> {
 pub fn parse_scenarios_path(s: &str) -> Result<Scenarios, String> {
     let path = Path::new(s);
     if !path.exists() {
-        return Err("The provided file does not exist".to_owned());
+        return Err("the provided file does not exist".to_owned());
     }
 
     if let Ok(mut file) = File::open(path) {
@@ -34,7 +55,7 @@ pub fn parse_scenarios_path(s: &str) -> Result<Scenarios, String> {
         }
     }
 
-    Err("Unable to deserialize the provided file into a Scenarios object".to_owned())
+    Err("unable to deserialize the provided file into a Scenarios object".to_owned())
 }
 
 /// Builds a hash map with all keys provided to the app.

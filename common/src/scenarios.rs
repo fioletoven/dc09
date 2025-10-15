@@ -32,6 +32,18 @@ impl DiallerConfig {
             count,
         }
     }
+
+    /// Sets receiver line number (account prefix).
+    pub fn with_line_number(mut self, line: Option<String>) -> Self {
+        self.prefix = line;
+        self
+    }
+
+    /// Sets receiver number.
+    pub fn with_receiver_number(mut self, receiver: Option<String>) -> Self {
+        self.receiver = receiver;
+        self
+    }
 }
 
 /// Holds scenario configuration.
