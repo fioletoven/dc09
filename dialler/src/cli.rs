@@ -66,6 +66,10 @@ pub struct Args {
     /// Configuration file specifying defined scenarios for the run.
     #[arg(long, value_parser = parse_scenarios_path)]
     pub scenarios: Option<Scenarios>,
+
+    /// Timeout for waiting for a response, in seconds.
+    #[arg(long, default_value_t = 1)]
+    pub timeout: u16,
 }
 
 impl Args {

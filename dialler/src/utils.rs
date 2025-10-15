@@ -2,7 +2,7 @@ use common::{
     scenarios::{DiallerConfig, Scenarios},
     utils::{SharedKeysMap, get_account_name},
 };
-use std::{net::IpAddr, sync::Arc};
+use std::{net::IpAddr, sync::Arc, time::Duration};
 
 use crate::{
     cli::{Args, SharedSignalsMap},
@@ -42,7 +42,7 @@ pub fn create_diallers(args: &Args, signals: &SharedSignalsMap, keys: &SharedKey
         ));
     }
 
-    result
+    set_timeouts(result, args.timeout.into())
 }
 
 /// Assigns messages from the scenarios to the particular dialler queues.
@@ -105,4 +105,14 @@ fn build_diallers(
     }
 
     result
+}
+
+fn set_timeouts(mut diallers: Vec<Dialler>, secs: u64) -> Vec<Dialler> {
+    let timeout = if secs == 0 { None } else { Some(Duration::from_secs(secs)) };
+
+    for dialler in &mut diallers {
+        dialler.set_timeout(timeout);
+    }
+
+    diallers
 }

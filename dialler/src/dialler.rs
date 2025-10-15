@@ -21,6 +21,7 @@ pub struct Dialler {
     udp: bool,
     signals: SharedSignalsMap,
     queue: VecDeque<(u16, u16)>,
+    timeout: Option<Duration>,
 }
 
 impl Dialler {
@@ -37,6 +38,7 @@ impl Dialler {
             udp: use_udp,
             signals,
             queue: VecDeque::new(),
+            timeout: None,
         }
     }
 
@@ -62,6 +64,11 @@ impl Dialler {
     pub fn with_key(mut self, keys: SharedKeysMap, index: u16) -> Self {
         self.key = Some((keys, index));
         self
+    }
+
+    /// Sets the optional timeout duration for receiving a message.
+    pub fn set_timeout(&mut self, timeout: Option<Duration>) {
+        self.timeout = timeout;
     }
 
     /// Returns key that can be used to decrypt and encrypt DC09 messages.
@@ -128,9 +135,9 @@ impl Dialler {
 
         log::info!("{}    connecting to {}:{}", self.account, self.address, self.port);
         if self.udp {
-            self.send_message_udp(message).await?;
+            self.send_message_udp(message, self.timeout).await?;
         } else {
-            self.send_message_tcp(message).await?;
+            self.send_message_tcp(message, self.timeout).await?;
         }
 
         Ok(())
@@ -150,23 +157,34 @@ impl Dialler {
         true
     }
 
-    async fn send_message_tcp(&mut self, message: String) -> Result<()> {
+    async fn send_message_tcp(&mut self, message: String, timeout: Option<Duration>) -> Result<()> {
         let mut stream = TcpStream::connect((self.address, self.port)).await?;
         stream.write_all(message.as_bytes()).await?;
         log::info!("{} >> {}", self.account, message.trim());
 
         let mut buffer = [0; 1024];
-        match stream.read(&mut buffer).await {
-            Ok(0) => log::error!("{}    connection closed by receiver", self.account),
-            Ok(n) => self.process_ack_buffer(&buffer, n),
-            Err(e) => log::error!("{}    failed to read response: {}", self.account, e),
+        let read_future = async {
+            match stream.read(&mut buffer).await {
+                Ok(0) => log::error!("{}    connection closed by receiver", self.account),
+                Ok(n) => self.process_ack_buffer(&buffer, n),
+                Err(e) => log::error!("{}    failed to read response: {}", self.account, e),
+            }
+        };
+
+        match timeout {
+            Some(timeout) => {
+                if (tokio::time::timeout(timeout, read_future).await).is_err() {
+                    log::warn!("{}    response timed out after {:?}", self.account, timeout);
+                }
+            },
+            None => read_future.await,
         }
 
         stream.shutdown().await?;
         Ok(())
     }
 
-    async fn send_message_udp(&self, message: String) -> Result<()> {
+    async fn send_message_udp(&self, message: String, timeout: Option<Duration>) -> Result<()> {
         let socket = UdpSocket::bind("0.0.0.0:0").await?;
         socket.connect((self.address, self.port)).await?;
 
@@ -174,9 +192,20 @@ impl Dialler {
         log::info!("{} >> {}", self.account, message.trim());
 
         let mut buffer = [0; 1024];
-        match socket.recv(&mut buffer).await {
-            Ok(n) => self.process_ack_buffer(&buffer, n),
-            Err(e) => log::error!("{}    failed to read response: {}", self.account, e),
+        let recv_future = async {
+            match socket.recv(&mut buffer).await {
+                Ok(n) => self.process_ack_buffer(&buffer, n),
+                Err(e) => log::error!("{}    failed to read response: {}", self.account, e),
+            }
+        };
+
+        match timeout {
+            Some(timeout) => {
+                if (tokio::time::timeout(timeout, recv_future).await).is_err() {
+                    log::warn!("{}    response timed out after {:?}", self.account, timeout);
+                }
+            },
+            None => recv_future.await,
         }
 
         Ok(())
