@@ -14,7 +14,7 @@ async fn main() -> Result<()> {
     let args = cli::Args::parse();
 
     if let Err(error) = run_diallers(args).await {
-        log::error!("{}", error);
+        log::error!("{error}");
     }
 
     Ok(())

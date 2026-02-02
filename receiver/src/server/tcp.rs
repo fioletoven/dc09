@@ -38,7 +38,7 @@ impl Server for TcpServer {
                     self.connections
                         .push(tokio::spawn(process_connection(stream, addr, Arc::clone(&self.config))));
                 },
-                Err(e) => log::error!("error accepting connection: {}", e),
+                Err(e) => log::error!("error accepting connection: {e}"),
             }
 
             if self.connections.len() > 1_000 {
@@ -49,15 +49,15 @@ impl Server for TcpServer {
 }
 
 async fn process_connection(mut socket: TcpStream, addr: SocketAddr, config: Arc<ServerConfig>) {
-    log::debug!("accepted new connection from {}", addr);
+    log::debug!("accepted new connection from {addr}");
 
     let mut buffer = [0; 1536];
     loop {
         match socket.read(&mut buffer).await {
             Ok(0) => {
                 match socket.shutdown().await {
-                    Ok(()) => log::debug!("connection closed by {}", addr),
-                    Err(e) => log::warn!("error while socket shutdown: {}", e),
+                    Ok(()) => log::debug!("connection closed by {addr}"),
+                    Err(e) => log::warn!("error while socket shutdown: {e}"),
                 }
 
                 return;
@@ -69,20 +69,20 @@ async fn process_connection(mut socket: TcpStream, addr: SocketAddr, config: Arc
                     }
                 },
                 Err(err) => {
-                    log::error!("received invalid UTF-8 sequence: {}", err);
+                    log::error!("received invalid UTF-8 sequence: {err}");
                     break;
                 },
             },
             Err(e) => {
-                log::error!("failed to read from socket: {}", e);
+                log::error!("failed to read from socket: {e}");
                 break;
             },
         }
     }
 
     match socket.shutdown().await {
-        Ok(()) => log::debug!("connection closed for {}", addr),
-        Err(e) => log::warn!("error while socket shutdown: {}", e),
+        Ok(()) => log::debug!("connection closed for {addr}"),
+        Err(e) => log::warn!("error while socket shutdown: {e}"),
     }
 }
 

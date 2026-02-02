@@ -35,7 +35,7 @@ impl Server for UdpServer {
         tokio::spawn(async move {
             while let Some((response, addr)) = _rx.recv().await {
                 if let Err(error) = _s.send_to(response.as_bytes(), &addr).await {
-                    log::error!("{}: {}", addr, error);
+                    log::error!("{addr}: {error}");
                 }
             }
         });
@@ -46,7 +46,7 @@ impl Server for UdpServer {
             match str::from_utf8(&buffer[..n]) {
                 Ok(msg) => process_message(&tx, addr, msg, &self.config),
                 Err(err) => {
-                    log::error!("received invalid UTF-8 sequence: {}", err);
+                    log::error!("received invalid UTF-8 sequence: {err}");
                 },
             }
         }

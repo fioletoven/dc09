@@ -16,11 +16,11 @@ async fn main() -> Result<()> {
     let (tcp, udp) = tokio::join!(run_receiver::<TcpServer>(&args), run_receiver::<UdpServer>(&args));
 
     if let Err(error) = tcp {
-        log::error!("tcp: {}", error);
+        log::error!("tcp: {error}");
     }
 
     if let Err(error) = udp {
-        log::error!("udp: {}", error);
+        log::error!("udp: {error}");
     }
 
     Ok(())
