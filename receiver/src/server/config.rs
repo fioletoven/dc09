@@ -3,18 +3,21 @@ use common::scenarios::DiallerConfig;
 use common::utils::{SharedKeysMap, get_account_name};
 use std::collections::HashMap;
 
+use crate::utils::DisplayMode;
+
 pub type DiallerKeys = HashMap<String, u16>;
 
 /// Server configuration.
 pub struct ServerConfig {
     pub diallers: DiallerKeys,
     pub keys: SharedKeysMap,
+    pub mode: DisplayMode,
     pub send_naks: bool,
 }
 
 impl ServerConfig {
     /// Creates new [`ServerConfig`] instance.
-    pub fn new(config: &[DiallerConfig], keys: SharedKeysMap, send_naks: bool) -> Self {
+    pub fn new(config: &[DiallerConfig], keys: SharedKeysMap) -> Self {
         let mut diallers = DiallerKeys::new();
         for (index, dialler) in config.iter().enumerate() {
             let account = dialler.name.parse::<u32>().ok();
@@ -29,8 +32,21 @@ impl ServerConfig {
         Self {
             diallers,
             keys,
-            send_naks,
+            mode: DisplayMode::Unmodified,
+            send_naks: false,
         }
+    }
+
+    /// Sets NAK flag.
+    pub fn with_nak(mut self, send_naks: bool) -> Self {
+        self.send_naks = send_naks;
+        self
+    }
+
+    /// Sets message display flag.
+    pub fn with_msg_mode(mut self, mode: DisplayMode) -> Self {
+        self.mode = mode;
+        self
     }
 
     /// Returns key for the specified message.
