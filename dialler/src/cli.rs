@@ -1,8 +1,7 @@
 use clap::Parser;
-use common::{
-    scenarios::{Scenarios, SignalConfig},
-    utils::{SharedKeysMap, parse_account_prefix, parse_key, parse_receiver, parse_scenarios_path},
-};
+use common::logging::DisplayMode;
+use common::scenarios::{Scenarios, SignalConfig};
+use common::utils::{SharedKeysMap, parse_account_prefix, parse_key, parse_receiver, parse_scenarios_path};
 use std::{collections::HashMap, net::IpAddr, sync::Arc};
 
 pub type SharedSignalsMap = Arc<HashMap<(u16, u16), SignalConfig>>;
@@ -62,6 +61,10 @@ pub struct Args {
     /// Use a UDP connection instead of a TCP one.
     #[arg(long, short)]
     pub udp: bool,
+
+    /// Display mode for sent messages.
+    #[arg(long, value_enum, value_name = "MODE", default_value = "target")]
+    pub show: DisplayMode,
 
     /// Configuration file specifying defined scenarios for the run.
     #[arg(long, value_parser = parse_scenarios_path)]

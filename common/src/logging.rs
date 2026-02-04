@@ -1,6 +1,15 @@
 use anyhow::Result;
+use clap::ValueEnum;
 use tracing_error::ErrorLayer;
 use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
+
+/// Display mode for the logged message.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, ValueEnum)]
+pub enum DisplayMode {
+    Target,
+    Plain,
+    Both,
+}
 
 /// Initializes new logging to the console and returns worker guard that will flush logs on drop.
 pub fn initialize(app_name: &str) -> Result<tracing_appender::non_blocking::WorkerGuard> {
@@ -11,10 +20,10 @@ pub fn initialize(app_name: &str) -> Result<tracing_appender::non_blocking::Work
     let timer = tracing_subscriber::fmt::time::OffsetTime::new(time_offset, timer);
 
     #[cfg(debug_assertions)]
-    let env = format!("warn,{}=info", app_name);
+    let env = format!("warn,{app_name}=info");
 
     #[cfg(not(debug_assertions))]
-    let env = format!("none,{}=info", app_name);
+    let env = format!("none,{app_name}=info");
 
     let env_filter = tracing_subscriber::filter::EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| tracing_subscriber::filter::EnvFilter::new(env));

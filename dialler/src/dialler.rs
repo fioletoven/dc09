@@ -1,10 +1,8 @@
 use anyhow::Result;
-use common::{dc09::DC09Message, scenarios::SignalConfig, time::OffsetDateTime, utils::SharedKeysMap};
+use common::{dc09::DC09Message, logging::DisplayMode, scenarios::SignalConfig, time::OffsetDateTime, utils::SharedKeysMap};
 use std::{collections::VecDeque, net::IpAddr, time::Duration};
-use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
-    net::{TcpStream, UdpSocket},
-};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::{TcpStream, UdpSocket};
 
 use crate::cli::SharedSignalsMap;
 
@@ -22,6 +20,7 @@ pub struct Dialler {
     signals: SharedSignalsMap,
     queue: VecDeque<(u16, u16)>,
     timeout: Option<Duration>,
+    mode: DisplayMode,
 }
 
 impl Dialler {
@@ -39,6 +38,7 @@ impl Dialler {
             signals,
             queue: VecDeque::new(),
             timeout: None,
+            mode: DisplayMode::Target,
         }
     }
 
@@ -66,6 +66,12 @@ impl Dialler {
         self
     }
 
+    /// Sets message display flag.
+    pub fn with_msg_mode(mut self, mode: DisplayMode) -> Self {
+        self.mode = mode;
+        self
+    }
+
     /// Sets the optional timeout duration for receiving a message.
     pub fn set_timeout(&mut self, timeout: Option<Duration>) {
         self.timeout = timeout;
@@ -90,7 +96,7 @@ impl Dialler {
     }
 
     /// Gets dialler's signals queue.
-    pub fn queue(&mut self) -> &mut VecDeque<(u16, u16)> {
+    pub fn queue_mut(&mut self) -> &mut VecDeque<(u16, u16)> {
         &mut self.queue
     }
 
@@ -124,6 +130,13 @@ impl Dialler {
         let message = DC09Message::new(token, self.account.clone(), self.sequence, Some(message))
             .with_receiver(self.receiver.clone())
             .with_line_prefix(self.line_prefix.clone());
+
+        let plain = if self.key.is_some() && self.mode != DisplayMode::Target {
+            Some(message.to_string())
+        } else {
+            None
+        };
+
         let message = if let Some(key) = self.key() {
             message
                 .with_timestamp(OffsetDateTime::now_utc())
@@ -135,9 +148,9 @@ impl Dialler {
 
         log::info!("{}    connecting to {}:{}", self.account, self.address, self.port);
         if self.udp {
-            self.send_message_udp(message, self.timeout).await?;
+            self.send_message_udp(message, plain.as_deref(), self.timeout).await?;
         } else {
-            self.send_message_tcp(message, self.timeout).await?;
+            self.send_message_tcp(message, plain.as_deref(), self.timeout).await?;
         }
 
         Ok(())
@@ -157,10 +170,10 @@ impl Dialler {
         true
     }
 
-    async fn send_message_tcp(&mut self, message: String, timeout: Option<Duration>) -> Result<()> {
+    async fn send_message_tcp(&mut self, message: String, plain: Option<&str>, timeout: Option<Duration>) -> Result<()> {
         let mut stream = TcpStream::connect((self.address, self.port)).await?;
         stream.write_all(message.as_bytes()).await?;
-        log::info!("{} >> {}", self.account, message.trim());
+        log_sent_message(&self.account, &message, plain, self.mode);
 
         let mut buffer = [0; 1024];
         let read_future = async {
@@ -184,12 +197,12 @@ impl Dialler {
         Ok(())
     }
 
-    async fn send_message_udp(&self, message: String, timeout: Option<Duration>) -> Result<()> {
+    async fn send_message_udp(&self, message: String, plain: Option<&str>, timeout: Option<Duration>) -> Result<()> {
         let socket = UdpSocket::bind("0.0.0.0:0").await?;
         socket.connect((self.address, self.port)).await?;
 
         let _ = socket.send(message.as_bytes()).await?;
-        log::info!("{} >> {}", self.account, message.trim());
+        log_sent_message(&self.account, &message, plain, self.mode);
 
         let mut buffer = [0; 1024];
         let recv_future = async {
@@ -226,5 +239,22 @@ impl Dialler {
             },
             Err(e) => log::error!("{} << ({}) {}", self.account, e, message.trim()),
         }
+    }
+}
+
+/// Logs sent message in a specified mode.
+pub fn log_sent_message(account: &str, message: &str, plain: Option<&str>, mode: DisplayMode) {
+    let decrypted = if let Some(plain) = plain { plain } else { message };
+
+    match mode {
+        DisplayMode::Target => log::info!("{} >> {}", account, message.trim()),
+        DisplayMode::Plain => log::info!("{} >> {}", account, decrypted.trim()),
+        DisplayMode::Both => {
+            if plain.is_some() {
+                log::info!("{} >> {} → {}", account, decrypted.trim(), message.trim());
+            } else {
+                log::info!("{} >> {}", account, message.trim());
+            }
+        },
     }
 }

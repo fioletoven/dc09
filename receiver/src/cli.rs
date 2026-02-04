@@ -1,8 +1,7 @@
 use clap::Parser;
-use common::{
-    scenarios::Scenarios,
-    utils::{SharedKeysMap, parse_key, parse_scenarios_path},
-};
+use common::logging::DisplayMode;
+use common::scenarios::Scenarios;
+use common::utils::{SharedKeysMap, parse_key, parse_scenarios_path};
 use std::net::IpAddr;
 
 /// Test server that handles DC09 dialler connections.
@@ -20,6 +19,10 @@ pub struct Args {
     /// Key to decrypt DC09 messages (16, 24 or 32 bytes long).
     #[arg(long, short, value_parser = parse_key)]
     pub key: Option<String>,
+
+    /// Display mode for received messages.
+    #[arg(long, value_enum, value_name = "MODE", default_value = "target")]
+    pub show: DisplayMode,
 
     /// Send `NAK` instead of `ACK` for received messages.
     #[arg(long)]

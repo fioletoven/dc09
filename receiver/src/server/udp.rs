@@ -1,12 +1,10 @@
 use anyhow::Result;
 use common::dc09::DC09Message;
 use std::{net::SocketAddr, sync::Arc};
-use tokio::{
-    net::{ToSocketAddrs, UdpSocket},
-    sync::mpsc::{UnboundedSender, unbounded_channel},
-};
+use tokio::net::{ToSocketAddrs, UdpSocket};
+use tokio::sync::mpsc::{UnboundedSender, unbounded_channel};
 
-use crate::utils::build_response_message;
+use crate::utils::{build_response_message, get_received_message};
 
 use super::{Server, ServerConfig};
 
@@ -57,7 +55,7 @@ fn process_message(tx: &UnboundedSender<(String, SocketAddr)>, addr: SocketAddr,
     let key = config.get_key_for_message(received_message);
     match DC09Message::try_from(received_message, key) {
         Ok(msg) => {
-            log::info!("{} -> {}", addr, received_message.trim());
+            log::info!("{} -> {}", addr, get_received_message(received_message, &msg, config.mode));
             let response = build_response_message(msg, key, config.send_naks);
 
             log::info!("{} <- {}", addr, response.trim());

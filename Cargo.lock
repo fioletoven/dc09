@@ -171,6 +171,7 @@ dependencies = [
  "aes",
  "anyhow",
  "cbc",
+ "clap",
  "crc",
  "hex",
  "nom",

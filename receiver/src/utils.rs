@@ -1,4 +1,5 @@
-use common::dc09::DC09Message;
+use common::{dc09::DC09Message, logging::DisplayMode};
+use std::borrow::Cow;
 
 pub fn build_response_message(msg: DC09Message, key: Option<&str>, nak: bool) -> String {
     let was_encrypted = msg.was_encrypted();
@@ -20,5 +21,19 @@ pub fn build_response_message(msg: DC09Message, key: Option<&str>, nak: bool) ->
         }
     } else {
         response.to_string()
+    }
+}
+
+pub fn get_received_message<'a>(unmodified: &'a str, msg: &DC09Message, mode: DisplayMode) -> Cow<'a, str> {
+    match mode {
+        DisplayMode::Target => unmodified.trim().into(),
+        DisplayMode::Plain => msg.to_string().trim().to_string().into(),
+        DisplayMode::Both => {
+            if msg.was_encrypted() {
+                format!("{} → {}", unmodified.trim(), msg.to_string().trim()).into()
+            } else {
+                msg.to_string().trim().to_string().into()
+            }
+        },
     }
 }
