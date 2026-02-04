@@ -1,13 +1,9 @@
-use common::{
-    scenarios::{DiallerConfig, Scenarios},
-    utils::{SharedKeysMap, get_account_name},
-};
-use std::{net::IpAddr, sync::Arc, time::Duration};
+use common::scenarios::{DiallerConfig, Scenarios};
+use common::utils::{SharedKeysMap, get_account_name};
+use std::{sync::Arc, time::Duration};
 
-use crate::{
-    cli::{Args, SharedSignalsMap},
-    dialler::Dialler,
-};
+use crate::cli::{Args, SharedSignalsMap};
+use crate::dialler::Dialler;
 
 /// Creates all diallers from the scenarios file and command line parameters.
 pub fn create_diallers(args: &Args, signals: &SharedSignalsMap, keys: &SharedKeysMap) -> Vec<Dialler> {
@@ -15,15 +11,7 @@ pub fn create_diallers(args: &Args, signals: &SharedSignalsMap, keys: &SharedKey
 
     if let Some(scenarios) = &args.scenarios {
         for (index, dialler) in scenarios.diallers.iter().enumerate() {
-            result.extend(build_diallers(
-                args.address,
-                args.port,
-                dialler,
-                signals,
-                keys,
-                (index + 1) as u16,
-                args.fixed,
-            ));
+            result.extend(build_diallers(args, dialler, signals, keys, (index + 1) as u16));
         }
     }
 
@@ -31,15 +19,7 @@ pub fn create_diallers(args: &Args, signals: &SharedSignalsMap, keys: &SharedKey
         let dialler = DiallerConfig::new(args.account.clone(), args.sequence, args.udp, args.diallers)
             .with_line_number(args.line.clone())
             .with_receiver_number(args.receiver.clone());
-        result.extend(build_diallers(
-            args.address,
-            args.port,
-            &dialler,
-            signals,
-            keys,
-            0,
-            args.fixed,
-        ));
+        result.extend(build_diallers(args, &dialler, signals, keys, 0));
     }
 
     set_timeouts(result, args.timeout.into())
@@ -66,7 +46,7 @@ fn assign_scenarios(dialler: &mut Dialler, scenarios: &Scenarios) {
             if let Some(sequence) = scenarios.get_sequence(*scenario_id) {
                 let id = *scenario_id + 1;
                 dialler
-                    .queue()
+                    .queue_mut()
                     .extend(sequence.iter().enumerate().map(|(i, _)| (id, i as u16)));
             }
         }
@@ -74,33 +54,32 @@ fn assign_scenarios(dialler: &mut Dialler, scenarios: &Scenarios) {
         for scenario in &scenarios.scenarios {
             let id = scenario.id + 1;
             dialler
-                .queue()
+                .queue_mut()
                 .extend(scenario.sequence.iter().enumerate().map(|(i, _)| (id, i as u16)));
         }
     }
 }
 
 fn build_diallers(
-    address: IpAddr,
-    port: u16,
+    args: &Args,
     config: &DiallerConfig,
     signals: &SharedSignalsMap,
     keys: &SharedKeysMap,
     index: u16,
-    fixed: bool,
 ) -> Vec<Dialler> {
     let mut result = Vec::with_capacity(config.count.max(1).into());
     let account = config.name.parse::<u32>().ok();
 
     for i in 0..config.count.max(1) {
-        let account = get_account_name(i, account, &config.name, fixed);
+        let account = get_account_name(i, account, &config.name, args.fixed);
 
         result.push(
-            Dialler::new(address, port, account, Arc::clone(signals), config.udp)
+            Dialler::new(args.address, args.port, account, Arc::clone(signals), config.udp)
                 .with_receiver_number(config.receiver.clone())
                 .with_line_prefix(config.prefix.clone())
                 .with_key(Arc::clone(keys), index)
-                .with_start_sequence(config.sequence.saturating_sub(1)),
+                .with_start_sequence(config.sequence.saturating_sub(1))
+                .with_msg_mode(args.show),
         );
     }
 

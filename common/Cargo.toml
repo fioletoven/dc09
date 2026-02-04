@@ -9,6 +9,7 @@ rust-version.workspace = true
 aes = { workspace = true }
 anyhow = { workspace = true }
 cbc = { workspace = true }
+clap = { workspace = true }
 crc = { workspace = true }
 hex = { workspace = true }
 nom = { workspace = true }

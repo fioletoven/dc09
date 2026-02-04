@@ -1,9 +1,8 @@
 use common::dc09::parse_dc09_account_name;
+use common::logging::DisplayMode;
 use common::scenarios::DiallerConfig;
 use common::utils::{SharedKeysMap, get_account_name};
 use std::collections::HashMap;
-
-use crate::utils::DisplayMode;
 
 pub type DiallerKeys = HashMap<String, u16>;
 
@@ -32,7 +31,7 @@ impl ServerConfig {
         Self {
             diallers,
             keys,
-            mode: DisplayMode::Unmodified,
+            mode: DisplayMode::Target,
             send_naks: false,
         }
     }

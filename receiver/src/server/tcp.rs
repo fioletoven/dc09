@@ -5,7 +5,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream, ToSocketAddrs};
 use tokio::task::JoinHandle;
 
-use crate::utils::{build_response_message, log_received_message};
+use crate::utils::{build_response_message, get_received_message};
 
 use super::{Server, ServerConfig};
 
@@ -88,7 +88,7 @@ async fn process_message(socket: &mut TcpStream, addr: &SocketAddr, received_mes
     let key = config.get_key_for_message(received_message);
     match DC09Message::try_from(received_message, key) {
         Ok(msg) => {
-            log_received_message(addr, received_message, &msg, config.mode);
+            log::info!("{} -> {}", addr, get_received_message(received_message, &msg, config.mode));
             let response = build_response_message(msg, key, config.send_naks);
 
             log::info!("{} <- {}", addr, response.trim());

@@ -1,9 +1,8 @@
 use clap::Parser;
+use common::logging::DisplayMode;
 use common::scenarios::Scenarios;
 use common::utils::{SharedKeysMap, parse_key, parse_scenarios_path};
 use std::net::IpAddr;
-
-use crate::utils::DisplayMode;
 
 /// Test server that handles DC09 dialler connections.
 #[derive(Parser, Debug, Clone)]
@@ -21,8 +20,8 @@ pub struct Args {
     #[arg(long, short, value_parser = parse_key)]
     pub key: Option<String>,
 
-    /// Message display mode.
-    #[arg(long, short, value_enum, default_value = "unmodified")]
+    /// Display mode for received messages.
+    #[arg(long, value_enum, value_name = "MODE", default_value = "target")]
     pub show: DisplayMode,
 
     /// Send `NAK` instead of `ACK` for received messages.
