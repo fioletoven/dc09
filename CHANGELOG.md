@@ -1,5 +1,16 @@
 # Change Log
 
+## WIP
+
+### Features
+
+- add optional `DUH` response for received messages
+- add `--show` switch for dialler and receiver
+
+### Bug fixes
+
+- disable ansi colors if output is not to a terminal
+
 ## 0.1.7 - 2025-10-15
 
 ### Features

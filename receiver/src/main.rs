@@ -37,5 +37,8 @@ async fn run_receiver<T: Server>(args: &cli::Args) -> Result<()> {
 fn create_server_config(args: &cli::Args) -> ServerConfig {
     let keys = args.build_keys_map();
     let diallers = args.scenarios.as_ref().map(|s| s.diallers.clone()).unwrap_or_default();
-    ServerConfig::new(&diallers, keys).with_nak(args.nak).with_msg_mode(args.show)
+    ServerConfig::new(&diallers, keys)
+        .with_nak(args.nak)
+        .with_duh(args.duh)
+        .with_msg_mode(args.show)
 }

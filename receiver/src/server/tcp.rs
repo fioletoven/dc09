@@ -89,7 +89,7 @@ async fn process_message(socket: &mut TcpStream, addr: &SocketAddr, received_mes
     match DC09Message::try_from(received_message, key) {
         Ok(msg) => {
             log::info!("{} -> {}", addr, get_received_message(received_message, &msg, config.mode));
-            let response = build_response_message(msg, key, config.send_naks);
+            let response = build_response_message(msg, key, config.ack);
 
             log::info!("{} <- {}", addr, response.trim());
             let _ = socket.write_all(response.as_bytes()).await;
