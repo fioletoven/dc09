@@ -56,7 +56,7 @@ fn process_message(tx: &UnboundedSender<(String, SocketAddr)>, addr: SocketAddr,
     match DC09Message::try_from(received_message, key) {
         Ok(msg) => {
             log::info!("{} -> {}", addr, get_received_message(received_message, &msg, config.mode));
-            let response = build_response_message(msg, key, config.send_naks);
+            let response = build_response_message(msg, key, config.ack);
 
             log::info!("{} <- {}", addr, response.trim());
             let _ = tx.send((response, addr));

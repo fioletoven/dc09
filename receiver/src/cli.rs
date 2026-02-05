@@ -25,8 +25,12 @@ pub struct Args {
     pub show: DisplayMode,
 
     /// Send `NAK` instead of `ACK` for received messages.
-    #[arg(long)]
+    #[arg(long, conflicts_with = "duh")]
     pub nak: bool,
+
+    /// Send `DUH` instead of `ACK` for received messages.
+    #[arg(long, conflicts_with = "nak")]
+    pub duh: bool,
 
     /// Configuration file specifying defined scenarios for the run.
     #[arg(long, value_parser = parse_scenarios_path)]

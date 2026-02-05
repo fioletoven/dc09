@@ -37,6 +37,7 @@ The application uses the following arguments, configurable via the command line:
 | `--repeat`, `-c`   | Number of times to repeat the message per dialler             | 1             | --repeat 5                          |
 | `--key`, `-k`      | Encryption key for DC09 messages (16, 24, or 32 bytes)        | `None`        | --key "my16bytekey1234567890abcdef" |
 | `--udp`, `-u`      | Use a UDP connection instead of a TCP one                     | false         | --udp                               |
+| `--show`           | Display mode for sent messages (target, plain or both)        | target        | --show both                         |
 | `--scenarios`      | Configuration file specifying defined scenarios for the run   | `None`        | --scenarios examples/scenarios.json |
 | `--timeout`        | Timeout for waiting for a response, in seconds                | 1             | --timeout 10                        |
 
@@ -70,7 +71,7 @@ The DC-09 Receiver Simulator is a command-line test server that handles DC-09 di
 
 - Listens for incoming DC09 dialler connections (TCP and UDP).
 - Optional encryption with a user-provided key (16, 24, or 32 bytes).
-- Optional `NAK` response for received messages.
+- Optional `NAK` or `DUH` response for received messages.
 - Assign distinct keys to different account names using scenario files.
 
 ### Usage
@@ -79,13 +80,15 @@ The DC-09 Receiver Simulator is a command-line test server that handles DC-09 di
 
 The application uses the following arguments, configurable via the command line:
 
-| Argument       | Description                                             | Default Value | Example                             |
-|:---------------|:--------------------------------------------------------|:--------------|:------------------------------------|
-| _\[ADDRESS\]_  | IP address to listen on                                 | 127.0.0.1     | 192.168.1.100                       |
-| `--port`, `-p` | Port number to listen on                                | 8080          | --port 9000                         |
-| `--key`, `-k`  | Key to decrypt DC09 messages (16, 24, or 32 bytes long) | None          | --key "my16bytekey1234567890abcdef" |
-| `--nak`        | Send `NAK` instead of `ACK` for received messages       | false         | --nak                               |
-| `--scenarios`  | Configuration file specifying keys for the diallers     | None          | --scenarios examples/scenarios.json |
+| Argument       | Description                                                | Default Value | Example                             |
+|:---------------|:-----------------------------------------------------------|:--------------|:------------------------------------|
+| _\[ADDRESS\]_  | IP address to listen on                                    | 127.0.0.1     | 192.168.1.100                       |
+| `--port`, `-p` | Port number to listen on                                   | 8080          | --port 9000                         |
+| `--key`, `-k`  | Key to decrypt DC09 messages (16, 24, or 32 bytes long)    | None          | --key "my16bytekey1234567890abcdef" |
+| `--nak`        | Send `NAK` instead of `ACK` for received messages          | false         | --nak                               |
+| `--duh`        | Send `DUH` instead of `ACK` for received messages          | false         | --duh                               |
+| `--show`       | Display mode for received messages (target, plain or both) | target        | --show plain                        |
+| `--scenarios`  | Configuration file specifying keys for the diallers        | None          | --scenarios examples/scenarios.json |
 
 #### Example commands
 

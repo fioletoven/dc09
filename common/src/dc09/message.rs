@@ -48,6 +48,11 @@ impl DC09Message {
             .with_timestamp(OffsetDateTime::now_utc())
     }
 
+    /// Creates new `DUH` [`DC09Message`] instance.
+    pub fn duh(account: String, sequence: u16) -> Self {
+        Self::new("DUH".to_owned(), account, sequence, None)
+    }
+
     // Adds UTC timestamp to the DC09 message.
     pub fn with_timestamp(mut self, timestamp: OffsetDateTime) -> Self {
         let format = format_description!("[hour]:[minute]:[second],[month]-[day]-[year]");

@@ -6,12 +6,20 @@ use std::collections::HashMap;
 
 pub type DiallerKeys = HashMap<String, u16>;
 
+/// Defines possible responses for received messages.
+#[derive(Clone, Copy, PartialEq)]
+pub enum AckMode {
+    Ack,
+    Nak,
+    Duh,
+}
+
 /// Server configuration.
 pub struct ServerConfig {
     pub diallers: DiallerKeys,
     pub keys: SharedKeysMap,
     pub mode: DisplayMode,
-    pub send_naks: bool,
+    pub ack: AckMode,
 }
 
 impl ServerConfig {
@@ -32,13 +40,25 @@ impl ServerConfig {
             diallers,
             keys,
             mode: DisplayMode::Target,
-            send_naks: false,
+            ack: AckMode::Ack,
         }
     }
 
     /// Sets NAK flag.
     pub fn with_nak(mut self, send_naks: bool) -> Self {
-        self.send_naks = send_naks;
+        if send_naks {
+            self.ack = AckMode::Nak;
+        }
+
+        self
+    }
+
+    /// Sets DUH flag.
+    pub fn with_duh(mut self, send_duhs: bool) -> Self {
+        if send_duhs {
+            self.ack = AckMode::Duh;
+        }
+
         self
     }
 

@@ -1,0 +1,13 @@
+FROM rust:1.93-alpine AS builder
+RUN apk add --no-cache musl-dev build-base
+
+WORKDIR /app
+
+COPY . .
+RUN cargo build --bin receiver --release --target x86_64-unknown-linux-musl
+
+FROM scratch
+
+COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/receiver /receiver
+
+ENTRYPOINT ["/receiver"]
