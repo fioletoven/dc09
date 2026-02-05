@@ -1,6 +1,6 @@
 # Change Log
 
-## WIP
+## 0.1.8 - 2026-02-05
 
 ### Features
 
