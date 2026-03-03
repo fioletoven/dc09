@@ -1,5 +1,5 @@
 use aes::cipher::{BlockDecryptMut, BlockEncryptMut, KeyIvInit, block_padding::NoPadding};
-use rand::{Rng, distr::Alphanumeric};
+use rand::{RngExt, distr::Alphanumeric};
 
 const ZEROS_IV: [u8; 16] = [0u8; 16];
 

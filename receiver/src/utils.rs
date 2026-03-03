@@ -1,7 +1,7 @@
 use common::{dc09::DC09Message, logging::DisplayMode};
 use std::borrow::Cow;
 
-use crate::server::AckMode;
+use crate::{metrics, server::AckMode};
 
 pub fn build_response_message(msg: DC09Message, key: Option<&str>, ack: AckMode) -> String {
     let was_encrypted = msg.was_encrypted();
@@ -29,6 +29,10 @@ pub fn build_response_message(msg: DC09Message, key: Option<&str>, ack: AckMode)
 }
 
 pub fn get_received_message<'a>(unmodified: &'a str, msg: &DC09Message, mode: DisplayMode) -> Cow<'a, str> {
+    metrics::messages_received()
+        .with_label_values(&[&msg.token, &msg.account])
+        .inc();
+
     match mode {
         DisplayMode::Target => unmodified.trim().into(),
         DisplayMode::Plain => msg.to_string().trim().to_string().into(),

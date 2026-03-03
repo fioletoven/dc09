@@ -3,6 +3,7 @@ use clap::Parser;
 use server::{Server, ServerConfig, TcpServer, UdpServer};
 
 mod cli;
+mod metrics;
 mod server;
 mod utils;
 
@@ -11,6 +12,13 @@ async fn main() -> Result<()> {
     let _logging_guard = common::logging::initialize("receiver")?;
 
     let args = cli::Args::parse();
+
+    metrics::register_all();
+    tokio::spawn(async move {
+        if let Err(e) = metrics::start_metrics_server(args.address, args.metrics).await {
+            log::error!("metrics server failed: {e}");
+        }
+    });
 
     log::info!("start listening on {}:{}", args.address, args.port);
     let (tcp, udp) = tokio::join!(run_receiver::<TcpServer>(&args), run_receiver::<UdpServer>(&args));
