@@ -100,6 +100,11 @@ impl DC09Message {
         }
     }
 
+    /// Returns `true` if message is a heartbeat.
+    pub fn is_heartbeat(&self) -> bool {
+        self.token == "NULL" || self.token == "*NULL"
+    }
+
     /// Returns `true` if the DC09 message was (or should be) encrypted.
     pub fn was_encrypted(&self) -> bool {
         self.token.chars().next().is_some_and(|ch| ch == '*')

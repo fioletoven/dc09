@@ -43,6 +43,21 @@ pub enum DC09Error {
     InvalidAccountNumber,
 }
 
+impl DC09Error {
+    /// Returns static str for the error variant.
+    pub fn reason(&self) -> &'static str {
+        match self {
+            DC09Error::ParseHeaderError => "ParseHeaderError",
+            DC09Error::ParsePayloadError => "ParsePayloadError",
+            DC09Error::DecryptError => "DecryptError",
+            DC09Error::InvalidLength => "InvalidLength",
+            DC09Error::InvalidCrc => "InvalidCrc",
+            DC09Error::InvalidSequenceNumber => "InvalidSequenceNumber",
+            DC09Error::InvalidAccountNumber => "InvalidAccountNumber",
+        }
+    }
+}
+
 /// Parses an account name from the DC09 message.\
 /// **Note** that this function does not validate CRC of the message.
 pub fn parse_dc09_account_name(input: &str) -> Result<String, DC09Error> {

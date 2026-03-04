@@ -8,8 +8,11 @@ rust-version.workspace = true
 [dependencies]
 common = { path = "../common" }
 anyhow = { workspace = true }
+axum = { workspace = true }
 clap = { workspace = true }
 log = { workspace = true }
+prometheus = { workspace = true }
 thiserror = { workspace = true }
+time = { workspace = true }
 tokio = { workspace = true }
 tokio-util = { workspace = true }

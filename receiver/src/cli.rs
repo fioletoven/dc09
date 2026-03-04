@@ -16,6 +16,10 @@ pub struct Args {
     #[arg(long, short, default_value = "8080")]
     pub port: u16,
 
+    /// Port number for metrics server.
+    #[arg(long, short, default_value = "9090")]
+    pub metrics: u16,
+
     /// Key to decrypt DC09 messages (16, 24 or 32 bytes long).
     #[arg(long, short, value_parser = parse_key)]
     pub key: Option<String>,
