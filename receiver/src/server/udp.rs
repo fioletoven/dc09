@@ -6,6 +6,7 @@ use tokio::net::{ToSocketAddrs, UdpSocket};
 use tokio::sync::mpsc::{UnboundedSender, unbounded_channel};
 
 use crate::metrics::AppState;
+use crate::server::ResponseMode;
 use crate::utils::{build_response_message, get_received_message};
 use crate::utils::{increase_total_connections, process_invalid_message_metrics, process_valid_message_metrics};
 use crate::{Server, ServerConfig};
@@ -52,7 +53,10 @@ impl Server for UdpServer {
             increase_total_connections(TRANSPORT_NAME);
 
             match str::from_utf8(&buffer[..n]) {
-                Ok(msg) => process_message(&tx, addr, msg, &self.config),
+                Ok(msg) => {
+                    let mode = self.state.response_mode.load(Ordering::Relaxed).into();
+                    process_message(&tx, addr, msg, &self.config, mode);
+                },
                 Err(err) => {
                     log::error!("received invalid UTF-8 sequence: {err}");
                 },
@@ -61,22 +65,28 @@ impl Server for UdpServer {
     }
 }
 
-fn process_message(tx: &UnboundedSender<(String, SocketAddr)>, addr: SocketAddr, received_message: &str, config: &ServerConfig) {
+fn process_message(
+    tx: &UnboundedSender<(String, SocketAddr)>,
+    addr: SocketAddr,
+    received_message: &str,
+    config: &ServerConfig,
+    response_mode: ResponseMode,
+) {
     let key = config.get_key_for_message(received_message);
     match DC09Message::try_from(received_message, key) {
         Ok(msg) => {
+            log::info!("{} -> {}", addr, get_received_message(received_message, &msg, config.mode));
             process_valid_message_metrics(TRANSPORT_NAME, received_message, &msg);
 
-            log::info!("{} -> {}", addr, get_received_message(received_message, &msg, config.mode));
-            let response = build_response_message(msg, key, config.ack);
-
-            log::info!("{} <- {}", addr, response.trim());
-            let _ = tx.send((response, addr));
+            if response_mode != ResponseMode::None {
+                let response = build_response_message(msg, key, response_mode);
+                log::info!("{} <- {}", addr, response.trim());
+                let _ = tx.send((response, addr));
+            }
         },
         Err(e) => {
-            process_invalid_message_metrics(TRANSPORT_NAME, received_message, &e);
-
             log::error!("{} -> {}: {}", addr, e, received_message.trim());
+            process_invalid_message_metrics(TRANSPORT_NAME, received_message, &e);
         },
     }
 }

@@ -3,15 +3,66 @@ use common::logging::DisplayMode;
 use common::scenarios::DiallerConfig;
 use common::utils::{SharedKeysMap, get_account_name};
 use std::collections::HashMap;
+use std::fmt::Display;
+use std::str::FromStr;
 
 pub type DiallerKeys = HashMap<String, u16>;
 
 /// Defines possible responses for received messages.
-#[derive(Clone, Copy, PartialEq)]
-pub enum AckMode {
+#[derive(Default, Clone, Copy, PartialEq)]
+pub enum ResponseMode {
+    #[default]
     Ack,
     Nak,
     Duh,
+    None,
+}
+
+impl From<u8> for ResponseMode {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => Self::Ack,
+            1 => Self::Nak,
+            2 => Self::Duh,
+            _ => Self::None,
+        }
+    }
+}
+
+impl From<ResponseMode> for u8 {
+    fn from(value: ResponseMode) -> Self {
+        match value {
+            ResponseMode::Ack => 0,
+            ResponseMode::Nak => 1,
+            ResponseMode::Duh => 2,
+            ResponseMode::None => 255,
+        }
+    }
+}
+
+impl Display for ResponseMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Ack => write!(f, "ack"),
+            Self::Nak => write!(f, "nak"),
+            Self::Duh => write!(f, "duh"),
+            Self::None => write!(f, "none"),
+        }
+    }
+}
+
+impl FromStr for ResponseMode {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_ascii_lowercase().as_str() {
+            "ack" => Ok(Self::Ack),
+            "nak" => Ok(Self::Nak),
+            "duh" => Ok(Self::Duh),
+            "none" => Ok(Self::None),
+            _ => Err(()),
+        }
+    }
 }
 
 /// Server configuration.
@@ -19,7 +70,6 @@ pub struct ServerConfig {
     pub diallers: DiallerKeys,
     pub keys: SharedKeysMap,
     pub mode: DisplayMode,
-    pub ack: AckMode,
 }
 
 impl ServerConfig {
@@ -40,26 +90,7 @@ impl ServerConfig {
             diallers,
             keys,
             mode: DisplayMode::Target,
-            ack: AckMode::Ack,
         }
-    }
-
-    /// Sets NAK flag.
-    pub fn with_nak(mut self, send_naks: bool) -> Self {
-        if send_naks {
-            self.ack = AckMode::Nak;
-        }
-
-        self
-    }
-
-    /// Sets DUH flag.
-    pub fn with_duh(mut self, send_duhs: bool) -> Self {
-        if send_duhs {
-            self.ack = AckMode::Duh;
-        }
-
-        self
     }
 
     /// Sets message display flag.

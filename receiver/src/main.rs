@@ -1,7 +1,8 @@
 use anyhow::Result;
 use clap::Parser;
 use server::{Server, ServerConfig, TcpServer, UdpServer};
-use std::sync::{Arc, atomic::AtomicBool};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicU8};
 
 use crate::metrics::AppState;
 
@@ -18,6 +19,7 @@ async fn main() -> Result<()> {
     let state = AppState {
         tcp_ready: Arc::new(AtomicBool::new(false)),
         udp_ready: Arc::new(AtomicBool::new(false)),
+        response_mode: Arc::new(AtomicU8::new(args.response_mode().into())),
     };
 
     metrics::register_all();
@@ -56,8 +58,5 @@ async fn run_receiver<T: Server>(args: &cli::Args, state: AppState) -> Result<()
 fn create_server_config(args: &cli::Args) -> ServerConfig {
     let keys = args.build_keys_map();
     let diallers = args.scenarios.as_ref().map(|s| s.diallers.clone()).unwrap_or_default();
-    ServerConfig::new(&diallers, keys)
-        .with_nak(args.nak)
-        .with_duh(args.duh)
-        .with_msg_mode(args.show)
+    ServerConfig::new(&diallers, keys).with_msg_mode(args.show)
 }

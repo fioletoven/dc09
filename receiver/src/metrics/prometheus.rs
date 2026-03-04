@@ -43,7 +43,7 @@ pub fn heartbeats_received() -> &'static IntCounterVec {
     METRIC.get_or_init(|| {
         IntCounterVec::new(
             Opts::new("dc09_heartbeat_received_total", "Total heartbeat/null messages received"),
-            &["account_id"],
+            &["account"],
         )
         .expect("metric can be created")
     })
@@ -66,7 +66,7 @@ pub fn last_message_timestamp() -> &'static GaugeVec {
                 "dc09_last_message_timestamp_seconds",
                 "Unix timestamp of last message received per account",
             ),
-            &["account_id"],
+            &["account"],
         )
         .expect("metric can be created")
     })
