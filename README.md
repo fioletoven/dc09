@@ -65,38 +65,93 @@ Send a NULL message and wait indefinitely for a response:
 
 ### Overview
 
-The DC-09 Receiver Simulator is a command-line test server that handles DC-09 dialler connections. This application listens on a specified IP address and port, decrypts incoming DC-09 messages using a user-provided key, and responds with `ACK` or `NAK` messages.
+The DC-09 Receiver Simulator is a command-line test server that handles DC-09 dialler connections. This application listens on a specified IP address and port, decrypts incoming DC-09 messages using a user-provided key, and responds with `ACK`, `NAK` or `DUH` messages.
 
 ### Features
 
-- Listens for incoming DC09 dialler connections (TCP and UDP).
-- Optional encryption with a user-provided key (16, 24, or 32 bytes).
-- Optional `NAK` or `DUH` response for received messages.
-- Assign distinct keys to different account names using scenario files.
+- Listens for DC-09 connections over **TCP** and **UDP**
+- Optional AES encryption/decryption with user-provided key (16, 24, or 32 bytes)
+- Per-account key support via scenario configuration file
+- Configurable static response mode: always `ACK`, `NAK` or `DUH`
+- Dynamic response mode switching via HTTP API (override command-line setting)
+- Prometheus metrics
 
 ### Usage
 
 #### Command-Line Arguments
 
-The application uses the following arguments, configurable via the command line:
+| Argument          | Description                                                                 | Default       | Example                                    |
+|:------------------|:----------------------------------------------------------------------------|:--------------|:-------------------------------------------|
+| _[ADDRESS]_       | IP address to listen on                                                     | 127.0.0.1     | 192.168.1.100                              |
+| `--port`, `-p`    | Port number to listen on (DC-09 traffic)                                    | 8080          | `--port 9000`                              |
+| `--key`, `-k`     | Default decryption key (16, 24 or 32 bytes)                                 | None          | `--key "my16bytekey1234567890abcdef"`      |
+| `--metrics`, `-m` | Port number for metrics server (Prometheus metrics)                         | 9090          | `--metrics 5000`                           |
+| `--nak`           | Always send `NAK` instead of `ACK`                                          | false         | `--nak`                                    |
+| `--duh`           | Always send `DUH` instead of `ACK`                                          | false         | `--duh`                                    |
+| `--show`          | Display received messages: `target`, `plain` or `both`                      | `target`      | `--show both`                              |
+| `--scenarios`     | JSON file with per-account keys and settings                                | None          | `--scenarios examples/scenarios.json`      |
 
-| Argument       | Description                                                | Default Value | Example                             |
-|:---------------|:-----------------------------------------------------------|:--------------|:------------------------------------|
-| _\[ADDRESS\]_  | IP address to listen on                                    | 127.0.0.1     | 192.168.1.100                       |
-| `--port`, `-p` | Port number to listen on                                   | 8080          | --port 9000                         |
-| `--key`, `-k`  | Key to decrypt DC09 messages (16, 24, or 32 bytes long)    | None          | --key "my16bytekey1234567890abcdef" |
-| `--nak`        | Send `NAK` instead of `ACK` for received messages          | false         | --nak                               |
-| `--duh`        | Send `DUH` instead of `ACK` for received messages          | false         | --duh                               |
-| `--show`       | Display mode for received messages (target, plain or both) | target        | --show plain                        |
-| `--scenarios`  | Configuration file specifying keys for the diallers        | None          | --scenarios examples/scenarios.json |
+**Note:** `--nak` and `--duh` are mutually exclusive. If neither is set, the default is `ACK`. The HTTP API can override this behaviour at runtime.
 
 #### Example commands
 
-Spin up a test server that tries to use encrypted communication with the `my16bytekey1234567890abcdef` key and sends `NAK` to all received messages.
+Basic encrypted receiver that always NAKs:
 
-```sh
+```bash
 ./receiver 192.168.1.100 --port 9000 --key "my16bytekey1234567890abcdef" --nak
 ```
+
+Run with per-account keys and show encrypted and decrypted DC-09 messages:
+
+```bash
+./receiver --port 5140 --scenarios ./test-accounts.json --show both
+```
+
+### HTTP Control API
+
+A lightweight HTTP server runs on the **same port** as Prometheus metrics (to keep firewall/NAT rules simple).
+
+| Method | Endpoint          | Description                              | Effect                                    |
+|--------|-------------------|------------------------------------------|-------------------------------------------|
+| `GET`  | `/mode`           | Get current response mode                | Returns e.g. `mode set to nak`            |
+| `PUT`  | `/mode/ack`       | Set response to `ACK`                    | Overrides `--nak`/`--duh`                 |
+| `PUT`  | `/mode/nak`       | Set response to `NAK`                    | Overrides command-line setting            |
+| `PUT`  | `/mode/duh`       | Set response to `DUH`                    | Overrides command-line setting            |
+| `PUT`  | `/mode/none`      | Send **no response** at all              | Useful for timeout/retransmission testing |
+
+> All `PUT` endpoints return `200 OK` on success with content: `mode set to {mode}`
+
+#### Examples
+
+Switch to no-response mode:
+
+```bash
+curl -X PUT http://192.168.1.100:9090/mode/none
+```
+
+Check current mode:
+
+```bash
+curl http://192.168.1.100:9090/mode
+```
+
+### Prometheus Metrics
+
+Exposed at: `http://<address>:<port>/metrics`
+
+Main metrics:
+
+| Metric name                              | Type      | Labels                  | Description                                       |
+|:-----------------------------------------|:----------|:------------------------|:--------------------------------------------------|
+| `dc09_messages_received_total`           | Counter   | `token`, `account`      | Total DC-09 messages received                     |
+| `dc09_messages_failed_total`             | Counter   | `transport`, `reason`   | Messages that failed parsing / processing         |
+| `dc09_connections_total`                 | Counter   | `transport`             | Total connections accepted (tcp/udp)              |
+| `dc09_heartbeat_received_total`          | Counter   | `account`               | Heartbeat / null messages received                |
+| `dc09_active_connections`                | Gauge     | -                       | Currently active client connections               |
+| `dc09_last_message_timestamp_seconds`    | Gauge     | `account`               | Unix timestamp of most recent message per account |
+| `dc09_message_size_bytes`                | Histogram | `transport`             | Size distribution of received messages (bytes)    |
+
+Example Grafana dashboard: [grafana-dashboard.json](./examples/grafana-dashboard.json).
 
 ## Scenario files
 
@@ -157,4 +212,9 @@ Each entry in the `sequence` array represents a signal with the following proper
 
 ## License
 
-[MIT](./LICENSE)
+This project is licensed under the **MIT License**.  
+See the [LICENSE](./LICENSE) file for the full text.
+
+### Third-party dependencies
+
+All third-party Rust crates and their licenses are listed in [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md).
