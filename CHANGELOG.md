@@ -1,10 +1,11 @@
 # Change Log
 
-## WIP
+## 0.1.9 - 2026-03-05
 
 ### Features
 
-- add Prometheus metrics endpoint to the receiver app
+- add Prometheus metrics endpoint in receiver
+- add dynamic ACK/NAK/DUH/none switching via HTTP API
 
 ## 0.1.8 - 2026-02-05
 
