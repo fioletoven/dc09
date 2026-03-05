@@ -4,6 +4,8 @@ use common::scenarios::Scenarios;
 use common::utils::{SharedKeysMap, parse_key, parse_scenarios_path};
 use std::net::IpAddr;
 
+use crate::server::ResponseMode;
+
 /// Test server that handles DC09 dialler connections.
 #[derive(Parser, Debug, Clone)]
 #[command(version, about, long_about = None)]
@@ -17,7 +19,7 @@ pub struct Args {
     pub port: u16,
 
     /// Port number for metrics server.
-    #[arg(long, short, default_value = "9090")]
+    #[arg(long, short, value_name = "PORT", default_value = "9090")]
     pub metrics: u16,
 
     /// Key to decrypt DC09 messages (16, 24 or 32 bytes long).
@@ -45,5 +47,16 @@ impl Args {
     /// Returns a hash map with all keys provided to the app.
     pub fn build_keys_map(&self) -> SharedKeysMap {
         common::utils::build_keys_map(self.scenarios.as_ref(), self.key.as_deref())
+    }
+
+    /// Returns response mode configured by cli args for the server: `ACK`, `NAK` or `DUH`.
+    pub fn response_mode(&self) -> ResponseMode {
+        if self.nak {
+            ResponseMode::Nak
+        } else if self.duh {
+            ResponseMode::Duh
+        } else {
+            ResponseMode::Ack
+        }
     }
 }

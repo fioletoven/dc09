@@ -3,21 +3,27 @@ use common::logging::DisplayMode;
 use std::borrow::Cow;
 use time::OffsetDateTime;
 
-use crate::{metrics, server::AckMode};
+use crate::{metrics, server::ResponseMode};
 
-pub fn build_response_message(msg: DC09Message, key: Option<&str>, ack: AckMode) -> String {
+pub fn build_response_message(msg: DC09Message, key: Option<&str>, mode: ResponseMode) -> String {
     let was_encrypted = msg.was_encrypted();
-    let response = match ack {
-        AckMode::Ack => DC09Message::ack(msg.account, msg.sequence)
-            .with_receiver(msg.receiver)
-            .with_line_prefix(msg.line_prefix),
-        AckMode::Nak => DC09Message::nak(),
-        AckMode::Duh => DC09Message::duh(msg.account, msg.sequence)
-            .with_receiver(msg.receiver)
-            .with_line_prefix(msg.line_prefix),
+    let response = match mode {
+        ResponseMode::Ack => Some(
+            DC09Message::ack(msg.account, msg.sequence)
+                .with_receiver(msg.receiver)
+                .with_line_prefix(msg.line_prefix),
+        ),
+        ResponseMode::Nak => Some(DC09Message::nak()),
+        ResponseMode::Duh => Some(
+            DC09Message::duh(msg.account, msg.sequence)
+                .with_receiver(msg.receiver)
+                .with_line_prefix(msg.line_prefix),
+        ),
+        ResponseMode::None => None,
     };
+    let Some(response) = response else { return String::new() };
 
-    if was_encrypted && ack == AckMode::Ack {
+    if was_encrypted && mode == ResponseMode::Ack {
         if let Some(key) = key {
             response
                 .to_encrypted(key)

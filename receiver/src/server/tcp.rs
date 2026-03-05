@@ -1,12 +1,13 @@
 use anyhow::Result;
 use common::dc09::DC09Message;
-use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicU8, Ordering};
 use std::{net::SocketAddr, sync::Arc};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream, ToSocketAddrs};
 use tokio::task::JoinHandle;
 
 use crate::metrics::AppState;
+use crate::server::ResponseMode;
 use crate::utils::{build_response_message, get_received_message};
 use crate::utils::{decrease_active_connections, increase_active_connections, increase_total_connections};
 use crate::utils::{process_invalid_message_metrics, process_valid_message_metrics};
@@ -42,8 +43,13 @@ impl Server for TcpServer {
         loop {
             match self.listener.accept().await {
                 Ok((stream, addr)) => {
-                    self.connections
-                        .push(tokio::spawn(process_connection(stream, addr, Arc::clone(&self.config))));
+                    let task = tokio::spawn(process_connection(
+                        stream,
+                        addr,
+                        Arc::clone(&self.config),
+                        Arc::clone(&self.state.response_mode),
+                    ));
+                    self.connections.push(task);
                 },
                 Err(e) => log::error!("error accepting connection: {e}"),
             }
@@ -55,7 +61,7 @@ impl Server for TcpServer {
     }
 }
 
-async fn process_connection(mut socket: TcpStream, addr: SocketAddr, config: Arc<ServerConfig>) {
+async fn process_connection(mut socket: TcpStream, addr: SocketAddr, config: Arc<ServerConfig>, mode: Arc<AtomicU8>) {
     log::debug!("accepted new connection from {addr}");
     increase_total_connections(TRANSPORT_NAME);
     increase_active_connections();
@@ -74,7 +80,8 @@ async fn process_connection(mut socket: TcpStream, addr: SocketAddr, config: Arc
             },
             Ok(n) => match str::from_utf8(&buffer[..n]) {
                 Ok(msg) => {
-                    if !process_message(&mut socket, &addr, msg, &config).await {
+                    let mode = mode.load(Ordering::Relaxed).into();
+                    if !process_message(&mut socket, &addr, msg, &config, mode).await {
                         break;
                     }
                 },
@@ -97,24 +104,30 @@ async fn process_connection(mut socket: TcpStream, addr: SocketAddr, config: Arc
     }
 }
 
-async fn process_message(socket: &mut TcpStream, addr: &SocketAddr, received_message: &str, config: &ServerConfig) -> bool {
+async fn process_message(
+    socket: &mut TcpStream,
+    addr: &SocketAddr,
+    received_message: &str,
+    config: &ServerConfig,
+    response_mode: ResponseMode,
+) -> bool {
     let key = config.get_key_for_message(received_message);
     match DC09Message::try_from(received_message, key) {
         Ok(msg) => {
+            log::info!("{} -> {}", addr, get_received_message(received_message, &msg, config.mode));
             process_valid_message_metrics(TRANSPORT_NAME, received_message, &msg);
 
-            log::info!("{} -> {}", addr, get_received_message(received_message, &msg, config.mode));
-            let response = build_response_message(msg, key, config.ack);
-
-            log::info!("{} <- {}", addr, response.trim());
-            let _ = socket.write_all(response.as_bytes()).await;
+            if response_mode != ResponseMode::None {
+                let response = build_response_message(msg, key, response_mode);
+                log::info!("{} <- {}", addr, response.trim());
+                let _ = socket.write_all(response.as_bytes()).await;
+            }
 
             true
         },
         Err(e) => {
-            process_invalid_message_metrics(TRANSPORT_NAME, received_message, &e);
-
             log::error!("{} -> {}: {}", addr, e, received_message.trim());
+            process_invalid_message_metrics(TRANSPORT_NAME, received_message, &e);
 
             false
         },

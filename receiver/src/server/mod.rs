@@ -1,4 +1,4 @@
-pub use self::config::{AckMode, ServerConfig};
+pub use self::config::{ResponseMode, ServerConfig};
 pub use self::tcp::TcpServer;
 pub use self::udp::UdpServer;
 
