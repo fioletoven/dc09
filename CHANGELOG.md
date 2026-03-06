@@ -1,5 +1,11 @@
 # Change Log
 
+## WIP
+
+### Features
+
+- separate heartbeat and message modes in HTTP API
+
 ## 0.1.9 - 2026-03-05
 
 ### Features

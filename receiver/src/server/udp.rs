@@ -54,8 +54,8 @@ impl Server for UdpServer {
 
             match str::from_utf8(&buffer[..n]) {
                 Ok(msg) => {
-                    let mode = self.state.response_mode.load(Ordering::Relaxed).into();
-                    process_message(&tx, addr, msg, &self.config, mode);
+                    let mode = &self.state.response_modes;
+                    process_message(&tx, addr, msg, &self.config, mode.message(), mode.heartbeat());
                 },
                 Err(err) => {
                     log::error!("received invalid UTF-8 sequence: {err}");
@@ -70,7 +70,8 @@ fn process_message(
     addr: SocketAddr,
     received_message: &str,
     config: &ServerConfig,
-    response_mode: ResponseMode,
+    message_mode: ResponseMode,
+    heartbeat_mode: ResponseMode,
 ) {
     let key = config.get_key_for_message(received_message);
     match DC09Message::try_from(received_message, key) {
@@ -78,8 +79,9 @@ fn process_message(
             log::info!("{} -> {}", addr, get_received_message(received_message, &msg, config.mode));
             process_valid_message_metrics(TRANSPORT_NAME, received_message, &msg);
 
-            if response_mode != ResponseMode::None {
-                let response = build_response_message(msg, key, response_mode);
+            let mode = if msg.is_heartbeat() { heartbeat_mode } else { message_mode };
+            if mode != ResponseMode::None {
+                let response = build_response_message(msg, key, mode);
                 log::info!("{} <- {}", addr, response.trim());
                 let _ = tx.send((response, addr));
             }

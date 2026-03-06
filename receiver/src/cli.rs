@@ -4,7 +4,7 @@ use common::scenarios::Scenarios;
 use common::utils::{SharedKeysMap, parse_key, parse_scenarios_path};
 use std::net::IpAddr;
 
-use crate::server::ResponseMode;
+use crate::server::{ResponseMode, ResponseModes};
 
 /// Test server that handles DC09 dialler connections.
 #[derive(Parser, Debug, Clone)]
@@ -49,14 +49,14 @@ impl Args {
         common::utils::build_keys_map(self.scenarios.as_ref(), self.key.as_deref())
     }
 
-    /// Returns response mode configured by cli args for the server: `ACK`, `NAK` or `DUH`.
-    pub fn response_mode(&self) -> ResponseMode {
+    /// Returns response modes configured by cli args for the server: `ACK`, `NAK` or `DUH`.
+    pub fn response_modes(&self) -> ResponseModes {
         if self.nak {
-            ResponseMode::Nak
+            ResponseModes::new(ResponseMode::Nak, ResponseMode::Nak)
         } else if self.duh {
-            ResponseMode::Duh
+            ResponseModes::new(ResponseMode::Duh, ResponseMode::Duh)
         } else {
-            ResponseMode::Ack
+            ResponseModes::new(ResponseMode::Ack, ResponseMode::Ack)
         }
     }
 }
