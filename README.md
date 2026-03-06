@@ -107,34 +107,6 @@ Run with per-account keys and show encrypted and decrypted DC-09 messages:
 ./receiver --port 5140 --scenarios ./test-accounts.json --show both
 ```
 
-### HTTP Control API
-
-A lightweight HTTP server runs on the **same port** as Prometheus metrics (to keep firewall/NAT rules simple).
-
-| Method | Endpoint          | Description                              | Effect                                    |
-|--------|-------------------|------------------------------------------|-------------------------------------------|
-| `GET`  | `/mode`           | Get current response mode                | Returns e.g. `mode set to nak`            |
-| `PUT`  | `/mode/ack`       | Set response to `ACK`                    | Overrides `--nak`/`--duh`                 |
-| `PUT`  | `/mode/nak`       | Set response to `NAK`                    | Overrides command-line setting            |
-| `PUT`  | `/mode/duh`       | Set response to `DUH`                    | Overrides command-line setting            |
-| `PUT`  | `/mode/none`      | Send **no response** at all              | Useful for timeout/retransmission testing |
-
-> All `PUT` endpoints return `200 OK` on success with content: `mode set to {mode}`
-
-#### Examples
-
-Switch to no-response mode:
-
-```bash
-curl -X PUT http://192.168.1.100:9090/mode/none
-```
-
-Check current mode:
-
-```bash
-curl http://192.168.1.100:9090/mode
-```
-
 ### Prometheus Metrics
 
 Exposed at: `http://<address>:<port>/metrics`
@@ -152,6 +124,41 @@ Main metrics:
 | `dc09_message_size_bytes`                | Histogram | `transport`             | Size distribution of received messages (bytes)    |
 
 Example Grafana dashboard: [grafana-dashboard.json](./examples/grafana-dashboard.json).
+
+### HTTP Control API
+
+A lightweight HTTP server runs on the **same port** as Prometheus metrics (to keep firewall/NAT rules simple).
+
+| Method | Endpoint               | Description                          |
+|--------|------------------------|--------------------------------------|
+| `GET`  | `/mode`                | Get response modes for all types     |
+| `GET`  | `/mode/{type}`         | Get response mode for a single type  |
+| `PUT`  | `/mode/{type}/{mode}`  | Set response mode for a single type  |
+
+| Parameter | Values                         |
+|-----------|--------------------------------|
+| `{type}`  | `message`, `heartbeat`         |
+| `{mode}`  | `ack`, `nak`, `duh`, `none`    |
+
+#### Examples
+
+```bash
+# Get all modes
+curl http://192.168.1.100:9090/mode
+{"message":"ack","heartbeat":"ack"}
+
+# Get mode for heartbeats
+curl http://192.168.1.100:9090/mode/heartbeat
+{"mode":"ack"}
+
+# Set message response to NAK (overrides command-line setting)
+curl -X PUT http://192.168.1.100:9090/mode/message/nak
+{"type":"message","mode":"nak"}
+
+# Stop responding to heartbeats (useful for timeout/retransmission testing)
+curl -X PUT http://192.168.1.100:9090/mode/heartbeat/none
+{"type":"heartbeat","mode":"none"}
+```
 
 ## Scenario files
 

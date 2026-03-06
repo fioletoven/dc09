@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::Parser;
 use server::{Server, ServerConfig, TcpServer, UdpServer};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, AtomicU8};
+use std::sync::atomic::AtomicBool;
 
 use crate::metrics::AppState;
 
@@ -19,7 +19,7 @@ async fn main() -> Result<()> {
     let state = AppState {
         tcp_ready: Arc::new(AtomicBool::new(false)),
         udp_ready: Arc::new(AtomicBool::new(false)),
-        response_mode: Arc::new(AtomicU8::new(args.response_mode().into())),
+        response_modes: Arc::new(args.response_modes()),
     };
 
     metrics::register_all();

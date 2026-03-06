@@ -5,65 +5,9 @@ use common::utils::{SharedKeysMap, get_account_name};
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::str::FromStr;
+use std::sync::atomic::{AtomicU8, Ordering};
 
 pub type DiallerKeys = HashMap<String, u16>;
-
-/// Defines possible responses for received messages.
-#[derive(Default, Clone, Copy, PartialEq)]
-pub enum ResponseMode {
-    #[default]
-    Ack,
-    Nak,
-    Duh,
-    None,
-}
-
-impl From<u8> for ResponseMode {
-    fn from(value: u8) -> Self {
-        match value {
-            0 => Self::Ack,
-            1 => Self::Nak,
-            2 => Self::Duh,
-            _ => Self::None,
-        }
-    }
-}
-
-impl From<ResponseMode> for u8 {
-    fn from(value: ResponseMode) -> Self {
-        match value {
-            ResponseMode::Ack => 0,
-            ResponseMode::Nak => 1,
-            ResponseMode::Duh => 2,
-            ResponseMode::None => 255,
-        }
-    }
-}
-
-impl Display for ResponseMode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Ack => write!(f, "ack"),
-            Self::Nak => write!(f, "nak"),
-            Self::Duh => write!(f, "duh"),
-            Self::None => write!(f, "none"),
-        }
-    }
-}
-
-impl FromStr for ResponseMode {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_ascii_lowercase().as_str() {
-            "ack" => Ok(Self::Ack),
-            "nak" => Ok(Self::Nak),
-            "duh" => Ok(Self::Duh),
-            "none" => Ok(Self::None),
-            _ => Err(()),
-        }
-    }
-}
 
 /// Server configuration.
 pub struct ServerConfig {
@@ -110,5 +54,105 @@ impl ServerConfig {
         }
 
         self.keys.get(&0).map(String::as_str)
+    }
+}
+
+/// Defines possible responses for received messages.
+#[derive(Default, Clone, Copy, PartialEq)]
+pub enum ResponseMode {
+    #[default]
+    Ack,
+    Nak,
+    Duh,
+    None,
+}
+
+impl From<u8> for ResponseMode {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => Self::Ack,
+            1 => Self::Nak,
+            2 => Self::Duh,
+            _ => Self::None,
+        }
+    }
+}
+
+impl From<ResponseMode> for u8 {
+    fn from(value: ResponseMode) -> Self {
+        match value {
+            ResponseMode::Ack => 0,
+            ResponseMode::Nak => 1,
+            ResponseMode::Duh => 2,
+            ResponseMode::None => 255,
+        }
+    }
+}
+
+impl Display for ResponseMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Ack => write!(f, "ack"),
+            Self::Nak => write!(f, "nak"),
+            Self::Duh => write!(f, "duh"),
+            Self::None => write!(f, "none"),
+        }
+    }
+}
+
+impl FromStr for ResponseMode {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_ascii_lowercase().as_str() {
+            "ack" => Ok(Self::Ack),
+            "nak" => Ok(Self::Nak),
+            "duh" => Ok(Self::Duh),
+            "none" => Ok(Self::None),
+            other => Err(format!("unknown response mode '{other}'")),
+        }
+    }
+}
+
+/// Holds response mode atomics for both message types.
+#[derive(Debug)]
+pub struct ResponseModes {
+    pub message: AtomicU8,
+    pub heartbeat: AtomicU8,
+}
+
+impl Default for ResponseModes {
+    fn default() -> Self {
+        Self::new(ResponseMode::Ack, ResponseMode::Ack)
+    }
+}
+
+impl ResponseModes {
+    /// Creates new [`ResponseModes`] instance.
+    pub fn new(message: ResponseMode, heartbeat: ResponseMode) -> Self {
+        Self {
+            message: AtomicU8::new(message.into()),
+            heartbeat: AtomicU8::new(heartbeat.into()),
+        }
+    }
+
+    /// Gets response mode for messages.
+    pub fn message(&self) -> ResponseMode {
+        self.message.load(Ordering::Relaxed).into()
+    }
+
+    /// Gets response mode for heartbeats.
+    pub fn heartbeat(&self) -> ResponseMode {
+        self.heartbeat.load(Ordering::Relaxed).into()
+    }
+
+    /// Sets response mode for messages.
+    pub fn set_message(&self, mode: ResponseMode) {
+        self.message.store(mode.into(), Ordering::Relaxed);
+    }
+
+    /// Sets response mode for heartbeats.
+    pub fn set_heartbeat(&self, mode: ResponseMode) {
+        self.heartbeat.store(mode.into(), Ordering::Relaxed);
     }
 }

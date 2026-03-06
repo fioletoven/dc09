@@ -8,7 +8,7 @@ This project uses the following third-party dependencies:
 
 ### Used by
 
-- **prometheus** (v0.14.0) — [repository](https://github.com/tikv/rust-prometheus)
+- **prometheus** (v0.14.0) - [repository](https://github.com/tikv/rust-prometheus)
 
 ### License text
 
@@ -223,8 +223,8 @@ This project uses the following third-party dependencies:
 
 ### Used by
 
-- **ryu** (v1.0.23) — [repository](https://github.com/dtolnay/ryu)
-- **sync_wrapper** (v1.0.2) — [repository](https://github.com/Actyx/sync_wrapper)
+- **ryu** (v1.0.23) - [repository](https://github.com/dtolnay/ryu)
+- **sync_wrapper** (v1.0.2) - [repository](https://github.com/Actyx/sync_wrapper)
 
 ### License text
 
@@ -311,7 +311,7 @@ limitations under the License.
 
 ### Used by
 
-- **matchit** (v0.8.4) — [repository](https://github.com/ibraheemdev/matchit)
+- **matchit** (v0.8.4) - [repository](https://github.com/ibraheemdev/matchit)
 
 ### License text
 
@@ -354,7 +354,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ### Used by
 
-- **lazy_static** (v1.5.0) — [repository](https://github.com/rust-lang-nursery/lazy-static.rs)
+- **lazy_static** (v1.5.0) - [repository](https://github.com/rust-lang-nursery/lazy-static.rs)
 
 ### License text
 
@@ -393,7 +393,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **hex** (v0.4.3) — [repository](https://github.com/KokaKiwi/rust-hex)
+- **hex** (v0.4.3) - [repository](https://github.com/KokaKiwi/rust-hex)
 
 ### License text
 
@@ -427,7 +427,7 @@ SOFTWARE.
 
 ### Used by
 
-- **form_urlencoded** (v1.2.2) — [repository](https://github.com/servo/rust-url)
+- **form_urlencoded** (v1.2.2) - [repository](https://github.com/servo/rust-url)
 
 ### License text
 
@@ -466,7 +466,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **percent-encoding** (v2.3.2) — [repository](https://github.com/servo/rust-url/)
+- **percent-encoding** (v2.3.2) - [repository](https://github.com/servo/rust-url/)
 
 ### License text
 
@@ -505,8 +505,8 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **cfg-if** (v1.0.4) — [repository](https://github.com/rust-lang/cfg-if)
-- **socket2** (v0.6.2) — [repository](https://github.com/rust-lang/socket2)
+- **cfg-if** (v1.0.4) - [repository](https://github.com/rust-lang/cfg-if)
+- **socket2** (v0.6.3) - [repository](https://github.com/rust-lang/socket2)
 
 ### License text
 
@@ -545,7 +545,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **mio** (v1.1.1) — [repository](https://github.com/tokio-rs/mio)
+- **mio** (v1.1.1) - [repository](https://github.com/tokio-rs/mio)
 
 ### License text
 
@@ -578,7 +578,7 @@ THE SOFTWARE.
 
 ### Used by
 
-- **mime** (v0.3.17) — [repository](https://github.com/hyperium/mime)
+- **mime** (v0.3.17) - [repository](https://github.com/hyperium/mime)
 
 ### License text
 
@@ -612,10 +612,10 @@ THE SOFTWARE.
 
 ### Used by
 
-- **bitflags** (v2.11.0) — [repository](https://github.com/bitflags/bitflags)
-- **log** (v0.4.29) — [repository](https://github.com/rust-lang/log)
-- **regex-automata** (v0.4.14) — [repository](https://github.com/rust-lang/regex)
-- **regex-syntax** (v0.8.10) — [repository](https://github.com/rust-lang/regex)
+- **bitflags** (v2.11.0) - [repository](https://github.com/bitflags/bitflags)
+- **log** (v0.4.29) - [repository](https://github.com/rust-lang/log)
+- **regex-automata** (v0.4.14) - [repository](https://github.com/rust-lang/regex)
+- **regex-syntax** (v0.8.10) - [repository](https://github.com/rust-lang/regex)
 
 ### License text
 
@@ -654,7 +654,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **nom** (v8.0.0) — [repository](https://github.com/rust-bakery/nom)
+- **nom** (v8.0.0) - [repository](https://github.com/rust-bakery/nom)
 
 ### License text
 
@@ -688,7 +688,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **hyper** (v1.8.1) — [repository](https://github.com/hyperium/hyper)
+- **hyper** (v1.8.1) - [repository](https://github.com/hyperium/hyper)
 
 ### License text
 
@@ -721,7 +721,7 @@ THE SOFTWARE.
 
 ### Used by
 
-- **heck** (v0.5.0) — [repository](https://github.com/withoutboats/heck)
+- **heck** (v0.5.0) - [repository](https://github.com/withoutboats/heck)
 
 ### License text
 
@@ -760,7 +760,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **httparse** (v1.10.1) — [repository](https://github.com/seanmonstar/httparse)
+- **httparse** (v1.10.1) - [repository](https://github.com/seanmonstar/httparse)
 
 ### License text
 
@@ -794,11 +794,11 @@ THE SOFTWARE.
 
 ### Used by
 
-- **futures-channel** (v0.3.32) — [repository](https://github.com/rust-lang/futures-rs)
-- **futures-core** (v0.3.32) — [repository](https://github.com/rust-lang/futures-rs)
-- **futures-sink** (v0.3.32) — [repository](https://github.com/rust-lang/futures-rs)
-- **futures-task** (v0.3.32) — [repository](https://github.com/rust-lang/futures-rs)
-- **futures-util** (v0.3.32) — [repository](https://github.com/rust-lang/futures-rs)
+- **futures-channel** (v0.3.32) - [repository](https://github.com/rust-lang/futures-rs)
+- **futures-core** (v0.3.32) - [repository](https://github.com/rust-lang/futures-rs)
+- **futures-sink** (v0.3.32) - [repository](https://github.com/rust-lang/futures-rs)
+- **futures-task** (v0.3.32) - [repository](https://github.com/rust-lang/futures-rs)
+- **futures-util** (v0.3.32) - [repository](https://github.com/rust-lang/futures-rs)
 
 ### License text
 
@@ -838,7 +838,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **serde_urlencoded** (v0.7.1) — [repository](https://github.com/nox/serde_urlencoded)
+- **serde_urlencoded** (v0.7.1) - [repository](https://github.com/nox/serde_urlencoded)
 
 ### License text
 
@@ -877,7 +877,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **utf8parse** (v0.2.2) — [repository](https://github.com/alacritty/vte)
+- **utf8parse** (v0.2.2) - [repository](https://github.com/alacritty/vte)
 
 ### License text
 
@@ -916,7 +916,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **httpdate** (v1.0.3) — [repository](https://github.com/pyfisch/httpdate)
+- **httpdate** (v1.0.3) - [repository](https://github.com/pyfisch/httpdate)
 
 ### License text
 
@@ -949,10 +949,10 @@ THE SOFTWARE.
 
 ### Used by
 
-- **lock_api** (v0.4.14) — [repository](https://github.com/Amanieu/parking_lot)
-- **parking_lot** (v0.12.5) — [repository](https://github.com/Amanieu/parking_lot)
-- **parking_lot_core** (v0.9.12) — [repository](https://github.com/Amanieu/parking_lot)
-- **thread_local** (v1.1.9) — [repository](https://github.com/Amanieu/thread_local-rs)
+- **lock_api** (v0.4.14) - [repository](https://github.com/Amanieu/parking_lot)
+- **parking_lot** (v0.12.5) - [repository](https://github.com/Amanieu/parking_lot)
+- **parking_lot_core** (v0.9.12) - [repository](https://github.com/Amanieu/parking_lot)
+- **thread_local** (v1.1.9) - [repository](https://github.com/Amanieu/thread_local-rs)
 
 ### License text
 
@@ -991,7 +991,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **scopeguard** (v1.2.0) — [repository](https://github.com/bluss/scopeguard)
+- **scopeguard** (v1.2.0) - [repository](https://github.com/bluss/scopeguard)
 
 ### License text
 
@@ -1030,7 +1030,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **cipher** (v0.4.4) — [repository](https://github.com/RustCrypto/traits)
+- **cipher** (v0.4.4) - [repository](https://github.com/RustCrypto/traits)
 
 ### License text
 
@@ -1069,7 +1069,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **fnv** (v1.0.7) — [repository](https://github.com/servo/rust-fnv)
+- **fnv** (v1.0.7) - [repository](https://github.com/servo/rust-fnv)
 
 ### License text
 
@@ -1108,7 +1108,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **redox_syscall** (v0.5.18) — [repository](https://gitlab.redox-os.org/redox-os/syscall)
+- **redox_syscall** (v0.5.18) - [repository](https://gitlab.redox-os.org/redox-os/syscall)
 
 ### License text
 
@@ -1144,7 +1144,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **http** (v1.4.0) — [repository](https://github.com/hyperium/http)
+- **http** (v1.4.0) - [repository](https://github.com/hyperium/http)
 
 ### License text
 
@@ -1183,7 +1183,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **aes** (v0.8.4) — [repository](https://github.com/RustCrypto/block-ciphers)
+- **aes** (v0.8.4) - [repository](https://github.com/RustCrypto/block-ciphers)
 
 ### License text
 
@@ -1222,7 +1222,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **bytes** (v1.11.1) — [repository](https://github.com/tokio-rs/bytes)
+- **bytes** (v1.11.1) - [repository](https://github.com/tokio-rs/bytes)
 
 ### License text
 
@@ -1261,7 +1261,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **smallvec** (v1.15.1) — [repository](https://github.com/servo/rust-smallvec)
+- **smallvec** (v1.15.1) - [repository](https://github.com/servo/rust-smallvec)
 
 ### License text
 
@@ -1300,7 +1300,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **pin-utils** (v0.1.0) — [repository](https://github.com/rust-lang-nursery/pin-utils)
+- **pin-utils** (v0.1.0) - [repository](https://github.com/rust-lang-nursery/pin-utils)
 
 ### License text
 
@@ -1339,7 +1339,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **block-padding** (v0.3.3) — [repository](https://github.com/RustCrypto/utils)
+- **block-padding** (v0.3.3) - [repository](https://github.com/RustCrypto/utils)
 
 ### License text
 
@@ -1378,7 +1378,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **cbc** (v0.1.2) — [repository](https://github.com/RustCrypto/block-modes)
+- **cbc** (v0.1.2) - [repository](https://github.com/RustCrypto/block-modes)
 
 ### License text
 
@@ -1418,7 +1418,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **rand_core** (v0.10.0) — [repository](https://github.com/rust-random/rand_core)
+- **rand_core** (v0.10.0) - [repository](https://github.com/rust-random/rand_core)
 
 ### License text
 
@@ -1457,7 +1457,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **getrandom** (v0.4.2) — [repository](https://github.com/rust-random/getrandom)
+- **getrandom** (v0.4.2) - [repository](https://github.com/rust-random/getrandom)
 
 ### License text
 
@@ -1497,7 +1497,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **slab** (v0.4.12) — [repository](https://github.com/tokio-rs/slab)
+- **slab** (v0.4.12) - [repository](https://github.com/tokio-rs/slab)
 
 ### License text
 
@@ -1536,7 +1536,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **sharded-slab** (v0.1.7) — [repository](https://github.com/hawkw/sharded-slab)
+- **sharded-slab** (v0.1.7) - [repository](https://github.com/hawkw/sharded-slab)
 
 ### License text
 
@@ -1569,7 +1569,7 @@ THE SOFTWARE.
 
 ### Used by
 
-- **matchers** (v0.2.0) — [repository](https://github.com/hawkw/matchers)
+- **matchers** (v0.2.0) - [repository](https://github.com/hawkw/matchers)
 
 ### License text
 
@@ -1602,8 +1602,8 @@ SOFTWARE.
 
 ### Used by
 
-- **protobuf-support** (v3.7.2) — [repository](https://github.com/stepancheg/rust-protobuf/)
-- **protobuf** (v3.7.2) — [repository](https://github.com/stepancheg/rust-protobuf/)
+- **protobuf-support** (v3.7.2) - [repository](https://github.com/stepancheg/rust-protobuf/)
+- **protobuf** (v3.7.2) - [repository](https://github.com/stepancheg/rust-protobuf/)
 
 ### License text
 
@@ -1636,12 +1636,12 @@ OR OTHER DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **tracing-appender** (v0.2.4) — [repository](https://github.com/tokio-rs/tracing)
-- **tracing-core** (v0.1.36) — [repository](https://github.com/tokio-rs/tracing)
-- **tracing-error** (v0.2.1) — [repository](https://github.com/tokio-rs/tracing)
-- **tracing-log** (v0.2.0) — [repository](https://github.com/tokio-rs/tracing)
-- **tracing-subscriber** (v0.3.22) — [repository](https://github.com/tokio-rs/tracing)
-- **tracing** (v0.1.44) — [repository](https://github.com/tokio-rs/tracing)
+- **tracing-appender** (v0.2.4) - [repository](https://github.com/tokio-rs/tracing)
+- **tracing-core** (v0.1.36) - [repository](https://github.com/tokio-rs/tracing)
+- **tracing-error** (v0.2.1) - [repository](https://github.com/tokio-rs/tracing)
+- **tracing-log** (v0.2.0) - [repository](https://github.com/tokio-rs/tracing)
+- **tracing-subscriber** (v0.3.22) - [repository](https://github.com/tokio-rs/tracing)
+- **tracing** (v0.1.44) - [repository](https://github.com/tokio-rs/tracing)
 
 ### License text
 
@@ -1680,9 +1680,9 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **tower-layer** (v0.3.3) — [repository](https://github.com/tower-rs/tower)
-- **tower-service** (v0.3.3) — [repository](https://github.com/tower-rs/tower)
-- **tower** (v0.5.3) — [repository](https://github.com/tower-rs/tower)
+- **tower-layer** (v0.3.3) - [repository](https://github.com/tower-rs/tower)
+- **tower-service** (v0.3.3) - [repository](https://github.com/tower-rs/tower)
+- **tower** (v0.5.3) - [repository](https://github.com/tower-rs/tower)
 
 ### License text
 
@@ -1721,7 +1721,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **axum** (v0.8.8) — [repository](https://github.com/tokio-rs/axum)
+- **axum** (v0.8.8) - [repository](https://github.com/tokio-rs/axum)
 
 ### License text
 
@@ -1760,7 +1760,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **http-body** (v1.0.1) — [repository](https://github.com/hyperium/http-body)
+- **http-body** (v1.0.1) - [repository](https://github.com/hyperium/http-body)
 
 ### License text
 
@@ -1799,7 +1799,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **http-body-util** (v0.1.3) — [repository](https://github.com/hyperium/http-body)
+- **http-body-util** (v0.1.3) - [repository](https://github.com/hyperium/http-body)
 
 ### License text
 
@@ -1838,7 +1838,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **chacha20** (v0.10.0) — [repository](https://github.com/RustCrypto/stream-ciphers)
+- **chacha20** (v0.10.0) - [repository](https://github.com/RustCrypto/stream-ciphers)
 
 ### License text
 
@@ -1877,8 +1877,8 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **cpufeatures** (v0.2.17) — [repository](https://github.com/RustCrypto/utils)
-- **cpufeatures** (v0.3.0) — [repository](https://github.com/RustCrypto/utils)
+- **cpufeatures** (v0.2.17) - [repository](https://github.com/RustCrypto/utils)
+- **cpufeatures** (v0.3.0) - [repository](https://github.com/RustCrypto/utils)
 
 ### License text
 
@@ -1917,7 +1917,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **num_threads** (v0.1.7) — [repository](https://github.com/jhpratt/num_threads)
+- **num_threads** (v0.1.7) - [repository](https://github.com/jhpratt/num_threads)
 
 ### License text
 
@@ -1950,7 +1950,7 @@ SOFTWARE.
 
 ### Used by
 
-- **crypto-common** (v0.1.7) — [repository](https://github.com/RustCrypto/traits)
+- **crypto-common** (v0.1.7) - [repository](https://github.com/RustCrypto/traits)
 
 ### License text
 
@@ -1989,7 +1989,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **inout** (v0.1.4) — [repository](https://github.com/RustCrypto/utils)
+- **inout** (v0.1.4) - [repository](https://github.com/RustCrypto/utils)
 
 ### License text
 
@@ -2029,7 +2029,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **num-conv** (v0.2.0) — [repository](https://github.com/jhpratt/num-conv)
+- **num-conv** (v0.2.0) - [repository](https://github.com/jhpratt/num-conv)
 
 ### License text
 
@@ -2062,7 +2062,7 @@ SOFTWARE.
 
 ### Used by
 
-- **powerfmt** (v0.2.0) — [repository](https://github.com/jhpratt/powerfmt)
+- **powerfmt** (v0.2.0) - [repository](https://github.com/jhpratt/powerfmt)
 
 ### License text
 
@@ -2095,7 +2095,7 @@ SOFTWARE.
 
 ### Used by
 
-- **hyper-util** (v0.1.20) — [repository](https://github.com/hyperium/hyper-util)
+- **hyper-util** (v0.1.20) - [repository](https://github.com/hyperium/hyper-util)
 
 ### License text
 
@@ -2128,7 +2128,7 @@ THE SOFTWARE.
 
 ### Used by
 
-- **deranged** (v0.5.8) — [repository](https://github.com/jhpratt/deranged)
+- **deranged** (v0.5.8) - [repository](https://github.com/jhpratt/deranged)
 
 ### License text
 
@@ -2161,18 +2161,18 @@ SOFTWARE.
 
 ### Used by
 
-- **anstream** (v0.6.21) — [repository](https://github.com/rust-cli/anstyle.git)
-- **anstyle-parse** (v0.2.7) — [repository](https://github.com/rust-cli/anstyle.git)
-- **anstyle-query** (v1.1.5) — [repository](https://github.com/rust-cli/anstyle.git)
-- **anstyle-wincon** (v3.0.11) — [repository](https://github.com/rust-cli/anstyle.git)
-- **anstyle** (v1.0.13) — [repository](https://github.com/rust-cli/anstyle.git)
-- **clap** (v4.5.60) — [repository](https://github.com/clap-rs/clap)
-- **clap_builder** (v4.5.60) — [repository](https://github.com/clap-rs/clap)
-- **clap_derive** (v4.5.55) — [repository](https://github.com/clap-rs/clap)
-- **clap_lex** (v1.0.0) — [repository](https://github.com/clap-rs/clap)
-- **colorchoice** (v1.0.4) — [repository](https://github.com/rust-cli/anstyle.git)
-- **is_terminal_polyfill** (v1.70.2) — [repository](https://github.com/polyfill-rs/is_terminal_polyfill)
-- **once_cell_polyfill** (v1.70.2) — [repository](https://github.com/polyfill-rs/once_cell_polyfill)
+- **anstream** (v0.6.21) - [repository](https://github.com/rust-cli/anstyle.git)
+- **anstyle-parse** (v0.2.7) - [repository](https://github.com/rust-cli/anstyle.git)
+- **anstyle-query** (v1.1.5) - [repository](https://github.com/rust-cli/anstyle.git)
+- **anstyle-wincon** (v3.0.11) - [repository](https://github.com/rust-cli/anstyle.git)
+- **anstyle** (v1.0.13) - [repository](https://github.com/rust-cli/anstyle.git)
+- **clap** (v4.5.60) - [repository](https://github.com/clap-rs/clap)
+- **clap_builder** (v4.5.60) - [repository](https://github.com/clap-rs/clap)
+- **clap_derive** (v4.5.55) - [repository](https://github.com/clap-rs/clap)
+- **clap_lex** (v1.0.0) - [repository](https://github.com/clap-rs/clap)
+- **colorchoice** (v1.0.4) - [repository](https://github.com/rust-cli/anstyle.git)
+- **is_terminal_polyfill** (v1.70.2) - [repository](https://github.com/polyfill-rs/is_terminal_polyfill)
+- **once_cell_polyfill** (v1.70.2) - [repository](https://github.com/polyfill-rs/once_cell_polyfill)
 
 ### License text
 
@@ -2205,9 +2205,9 @@ SOFTWARE.
 
 ### Used by
 
-- **time-core** (v0.1.8) — [repository](https://github.com/time-rs/time)
-- **time-macros** (v0.2.27) — [repository](https://github.com/time-rs/time)
-- **time** (v0.3.47) — [repository](https://github.com/time-rs/time)
+- **time-core** (v0.1.8) - [repository](https://github.com/time-rs/time)
+- **time-macros** (v0.2.27) - [repository](https://github.com/time-rs/time)
+- **time** (v0.3.47) - [repository](https://github.com/time-rs/time)
 
 ### License text
 
@@ -2240,7 +2240,7 @@ SOFTWARE.
 
 ### Used by
 
-- **libc** (v0.2.182) — [repository](https://github.com/rust-lang/libc)
+- **libc** (v0.2.182) - [repository](https://github.com/rust-lang/libc)
 
 ### License text
 
@@ -2279,7 +2279,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **rand** (v0.10.0) — [repository](https://github.com/rust-random/rand)
+- **rand** (v0.10.0) - [repository](https://github.com/rust-random/rand)
 
 ### License text
 
@@ -2319,7 +2319,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **crc** (v3.4.0) — [repository](https://github.com/mrhooray/crc-rs.git)
+- **crc** (v3.4.0) - [repository](https://github.com/mrhooray/crc-rs.git)
 
 ### License text
 
@@ -2354,7 +2354,7 @@ SOFTWARE.
 
 ### Used by
 
-- **crc-catalog** (v2.4.0) — [repository](https://github.com/akhilles/crc-catalog.git)
+- **crc-catalog** (v2.4.0) - [repository](https://github.com/akhilles/crc-catalog.git)
 
 ### License text
 
@@ -2389,7 +2389,7 @@ SOFTWARE.
 
 ### Used by
 
-- **tokio-macros** (v2.6.1) — [repository](https://github.com/tokio-rs/tokio)
+- **tokio-macros** (v2.6.1) - [repository](https://github.com/tokio-rs/tokio)
 
 ### License text
 
@@ -2425,7 +2425,7 @@ SOFTWARE.
 
 ### Used by
 
-- **axum-core** (v0.5.6) — [repository](https://github.com/tokio-rs/axum)
+- **axum-core** (v0.5.6) - [repository](https://github.com/tokio-rs/axum)
 
 ### License text
 
@@ -2465,7 +2465,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **matchit** (v0.8.4) — [repository](https://github.com/ibraheemdev/matchit)
+- **matchit** (v0.8.4) - [repository](https://github.com/ibraheemdev/matchit)
 
 ### License text
 
@@ -2500,24 +2500,14 @@ SOFTWARE.
 
 ### Used by
 
-- **common** (v0.1.8)
-- **dialler** (v0.1.8)
-- **receiver** (v0.1.8)
-- **r-efi** (v6.0.0) — [repository](https://github.com/r-efi/r-efi)
-- **wasip2** (v1.0.2+wasi-0.2.9) — [repository](https://github.com/bytecodealliance/wasi-rs)
-- **wasip3** (v0.4.0+wasi-0.3.0-rc-2026-01-06) — [repository](https://github.com/bytecodealliance/wasi-rs)
-- **windows-link** (v0.2.1) — [repository](https://github.com/microsoft/windows-rs)
-- **windows-sys** (v0.60.2) — [repository](https://github.com/microsoft/windows-rs)
-- **windows-sys** (v0.61.2) — [repository](https://github.com/microsoft/windows-rs)
-- **windows-targets** (v0.53.5) — [repository](https://github.com/microsoft/windows-rs)
-- **windows_aarch64_gnullvm** (v0.53.1) — [repository](https://github.com/microsoft/windows-rs)
-- **windows_aarch64_msvc** (v0.53.1) — [repository](https://github.com/microsoft/windows-rs)
-- **windows_i686_gnu** (v0.53.1) — [repository](https://github.com/microsoft/windows-rs)
-- **windows_i686_gnullvm** (v0.53.1) — [repository](https://github.com/microsoft/windows-rs)
-- **windows_i686_msvc** (v0.53.1) — [repository](https://github.com/microsoft/windows-rs)
-- **windows_x86_64_gnu** (v0.53.1) — [repository](https://github.com/microsoft/windows-rs)
-- **windows_x86_64_gnullvm** (v0.53.1) — [repository](https://github.com/microsoft/windows-rs)
-- **windows_x86_64_msvc** (v0.53.1) — [repository](https://github.com/microsoft/windows-rs)
+- **common** (v0.1.9)
+- **dialler** (v0.1.9)
+- **receiver** (v0.1.9)
+- **r-efi** (v6.0.0) - [repository](https://github.com/r-efi/r-efi)
+- **wasip2** (v1.0.2+wasi-0.2.9) - [repository](https://github.com/bytecodealliance/wasi-rs)
+- **wasip3** (v0.4.0+wasi-0.3.0-rc-2026-01-06) - [repository](https://github.com/bytecodealliance/wasi-rs)
+- **windows-link** (v0.2.1) - [repository](https://github.com/microsoft/windows-rs)
+- **windows-sys** (v0.61.2) - [repository](https://github.com/microsoft/windows-rs)
 
 ### License text
 
@@ -2549,8 +2539,8 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **tokio-util** (v0.7.18) — [repository](https://github.com/tokio-rs/tokio)
-- **tokio** (v1.50.0) — [repository](https://github.com/tokio-rs/tokio)
+- **tokio-util** (v0.7.18) - [repository](https://github.com/tokio-rs/tokio)
+- **tokio** (v1.50.0) - [repository](https://github.com/tokio-rs/tokio)
 
 ### License text
 
@@ -2585,27 +2575,27 @@ SOFTWARE.
 
 ### Used by
 
-- **anyhow** (v1.0.102) — [repository](https://github.com/dtolnay/anyhow)
-- **atomic-waker** (v1.1.2) — [repository](https://github.com/smol-rs/atomic-waker)
-- **itoa** (v1.0.17) — [repository](https://github.com/dtolnay/itoa)
-- **once_cell** (v1.21.3) — [repository](https://github.com/matklad/once_cell)
-- **pin-project-lite** (v0.2.17) — [repository](https://github.com/taiki-e/pin-project-lite)
-- **proc-macro2** (v1.0.106) — [repository](https://github.com/dtolnay/proc-macro2)
-- **quote** (v1.0.45) — [repository](https://github.com/dtolnay/quote)
-- **serde** (v1.0.228) — [repository](https://github.com/serde-rs/serde)
-- **serde_core** (v1.0.228) — [repository](https://github.com/serde-rs/serde)
-- **serde_derive** (v1.0.228) — [repository](https://github.com/serde-rs/serde)
-- **serde_json** (v1.0.149) — [repository](https://github.com/serde-rs/json)
-- **serde_path_to_error** (v0.1.20) — [repository](https://github.com/dtolnay/path-to-error)
-- **syn** (v2.0.117) — [repository](https://github.com/dtolnay/syn)
-- **thiserror-impl** (v1.0.69) — [repository](https://github.com/dtolnay/thiserror)
-- **thiserror-impl** (v2.0.18) — [repository](https://github.com/dtolnay/thiserror)
-- **thiserror** (v1.0.69) — [repository](https://github.com/dtolnay/thiserror)
-- **thiserror** (v2.0.18) — [repository](https://github.com/dtolnay/thiserror)
-- **unicode-ident** (v1.0.24) — [repository](https://github.com/dtolnay/unicode-ident)
-- **wasi** (v0.11.1+wasi-snapshot-preview1) — [repository](https://github.com/bytecodealliance/wasi)
-- **wit-bindgen** (v0.51.0) — [repository](https://github.com/bytecodealliance/wit-bindgen)
-- **zmij** (v1.0.21) — [repository](https://github.com/dtolnay/zmij)
+- **anyhow** (v1.0.102) - [repository](https://github.com/dtolnay/anyhow)
+- **atomic-waker** (v1.1.2) - [repository](https://github.com/smol-rs/atomic-waker)
+- **itoa** (v1.0.17) - [repository](https://github.com/dtolnay/itoa)
+- **once_cell** (v1.21.3) - [repository](https://github.com/matklad/once_cell)
+- **pin-project-lite** (v0.2.17) - [repository](https://github.com/taiki-e/pin-project-lite)
+- **proc-macro2** (v1.0.106) - [repository](https://github.com/dtolnay/proc-macro2)
+- **quote** (v1.0.45) - [repository](https://github.com/dtolnay/quote)
+- **serde** (v1.0.228) - [repository](https://github.com/serde-rs/serde)
+- **serde_core** (v1.0.228) - [repository](https://github.com/serde-rs/serde)
+- **serde_derive** (v1.0.228) - [repository](https://github.com/serde-rs/serde)
+- **serde_json** (v1.0.149) - [repository](https://github.com/serde-rs/json)
+- **serde_path_to_error** (v0.1.20) - [repository](https://github.com/dtolnay/path-to-error)
+- **syn** (v2.0.117) - [repository](https://github.com/dtolnay/syn)
+- **thiserror-impl** (v1.0.69) - [repository](https://github.com/dtolnay/thiserror)
+- **thiserror-impl** (v2.0.18) - [repository](https://github.com/dtolnay/thiserror)
+- **thiserror** (v1.0.69) - [repository](https://github.com/dtolnay/thiserror)
+- **thiserror** (v2.0.18) - [repository](https://github.com/dtolnay/thiserror)
+- **unicode-ident** (v1.0.24) - [repository](https://github.com/dtolnay/unicode-ident)
+- **wasi** (v0.11.1+wasi-snapshot-preview1) - [repository](https://github.com/bytecodealliance/wasi)
+- **wit-bindgen** (v0.51.0) - [repository](https://github.com/bytecodealliance/wit-bindgen)
+- **zmij** (v1.0.21) - [repository](https://github.com/dtolnay/zmij)
 
 ### License text
 
@@ -2642,7 +2632,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **typenum** (v1.19.0) — [repository](https://github.com/paholg/typenum)
+- **typenum** (v1.19.0) - [repository](https://github.com/paholg/typenum)
 
 ### License text
 
@@ -2677,7 +2667,7 @@ SOFTWARE.
 
 ### Used by
 
-- **memchr** (v2.8.0) — [repository](https://github.com/BurntSushi/memchr)
+- **memchr** (v2.8.0) - [repository](https://github.com/BurntSushi/memchr)
 
 ### License text
 
@@ -2712,7 +2702,7 @@ THE SOFTWARE.
 
 ### Used by
 
-- **strsim** (v0.11.1) — [repository](https://github.com/rapidfuzz/strsim-rs)
+- **strsim** (v0.11.1) - [repository](https://github.com/rapidfuzz/strsim-rs)
 
 ### License text
 
@@ -2749,8 +2739,8 @@ SOFTWARE.
 
 ### Used by
 
-- **crossbeam-channel** (v0.5.15) — [repository](https://github.com/crossbeam-rs/crossbeam)
-- **crossbeam-utils** (v0.8.21) — [repository](https://github.com/crossbeam-rs/crossbeam)
+- **crossbeam-channel** (v0.5.15) - [repository](https://github.com/crossbeam-rs/crossbeam)
+- **crossbeam-utils** (v0.8.21) - [repository](https://github.com/crossbeam-rs/crossbeam)
 
 ### License text
 
@@ -2791,7 +2781,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **version_check** (v0.9.5) — [repository](https://github.com/SergioBenitez/version_check)
+- **version_check** (v0.9.5) - [repository](https://github.com/SergioBenitez/version_check)
 
 ### License text
 
@@ -2824,7 +2814,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **nu-ansi-term** (v0.50.3) — [repository](https://github.com/nushell/nu-ansi-term)
+- **nu-ansi-term** (v0.50.3) - [repository](https://github.com/nushell/nu-ansi-term)
 
 ### License text
 
@@ -2860,7 +2850,7 @@ SOFTWARE.
 
 ### Used by
 
-- **generic-array** (v0.14.7) — [repository](https://github.com/fizyk20/generic-array.git)
+- **generic-array** (v0.14.7) - [repository](https://github.com/fizyk20/generic-array.git)
 
 ### License text
 
@@ -2894,7 +2884,7 @@ SOFTWARE.
 
 ### Used by
 
-- **unicode-ident** (v1.0.24) — [repository](https://github.com/dtolnay/unicode-ident)
+- **unicode-ident** (v1.0.24) - [repository](https://github.com/dtolnay/unicode-ident)
 
 ### License text
 
