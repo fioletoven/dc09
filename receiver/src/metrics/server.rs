@@ -39,21 +39,27 @@ struct ReadyResponse {
 }
 
 #[derive(Serialize)]
-struct ModeResponse {
-    mode: String,
-}
-
-#[derive(Serialize)]
-struct ModeSetResponse {
-    #[serde(rename = "type")]
-    msg_type: String,
-    mode: String,
-}
-
-#[derive(Serialize)]
 struct ModesResponse {
-    message: String,
-    heartbeat: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    message: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    heartbeat: Option<String>,
+}
+
+impl ModesResponse {
+    fn message(mode: ResponseMode) -> Self {
+        ModesResponse {
+            message: Some(mode.to_string()),
+            heartbeat: None,
+        }
+    }
+
+    fn heartbeat(mode: ResponseMode) -> Self {
+        ModesResponse {
+            message: None,
+            heartbeat: Some(mode.to_string()),
+        }
+    }
 }
 
 /// Message type path parameter
@@ -125,8 +131,8 @@ async fn ready_handler(State(state): State<AppState>) -> impl IntoResponse {
 /// `GET /mode` - returns the current response modes for messages and heartbeats.
 async fn get_modes(State(state): State<AppState>) -> impl IntoResponse {
     let resp = ModesResponse {
-        message: state.response_modes.message().to_string(),
-        heartbeat: state.response_modes.heartbeat().to_string(),
+        message: Some(state.response_modes.message().to_string()),
+        heartbeat: Some(state.response_modes.heartbeat().to_string()),
     };
 
     (StatusCode::OK, Json(resp))
@@ -136,25 +142,23 @@ async fn get_modes(State(state): State<AppState>) -> impl IntoResponse {
 async fn get_mode(
     State(state): State<AppState>,
     Path(msg_type): Path<String>,
-) -> Result<Json<ModeResponse>, (StatusCode, Json<ErrorResponse>)> {
+) -> Result<Json<ModesResponse>, (StatusCode, Json<ErrorResponse>)> {
     let msg_type = MessageType::from_str(&msg_type).map_err(|_| {
         let error = format!("unknown message type '{msg_type}', expected: message, heartbeat");
         (StatusCode::BAD_REQUEST, Json(ErrorResponse { error }))
     })?;
 
-    let mode = match msg_type {
-        MessageType::Message => state.response_modes.message(),
-        MessageType::Heartbeat => state.response_modes.heartbeat(),
-    };
-
-    Ok(Json(ModeResponse { mode: mode.to_string() }))
+    match msg_type {
+        MessageType::Message => Ok(Json(ModesResponse::message(state.response_modes.message()))),
+        MessageType::Heartbeat => Ok(Json(ModesResponse::heartbeat(state.response_modes.heartbeat()))),
+    }
 }
 
 /// `PUT /mode/{msg_type}/{mode}` - sets the response mode for messages or heartbeats.
 async fn set_mode(
     State(state): State<AppState>,
     Path((msg_type, mode)): Path<(String, String)>,
-) -> Result<Json<ModeSetResponse>, (StatusCode, Json<ErrorResponse>)> {
+) -> Result<Json<ModesResponse>, (StatusCode, Json<ErrorResponse>)> {
     let msg_type = MessageType::from_str(&msg_type).map_err(|_| {
         let error = format!("unknown message type '{msg_type}', expected: message, heartbeat");
         (StatusCode::BAD_REQUEST, Json(ErrorResponse { error }))
@@ -166,14 +170,15 @@ async fn set_mode(
     })?;
 
     match msg_type {
-        MessageType::Message => state.response_modes.set_message(mode),
-        MessageType::Heartbeat => state.response_modes.set_heartbeat(mode),
+        MessageType::Message => {
+            state.response_modes.set_message(mode);
+            Ok(Json(ModesResponse::message(mode)))
+        },
+        MessageType::Heartbeat => {
+            state.response_modes.set_heartbeat(mode);
+            Ok(Json(ModesResponse::heartbeat(mode)))
+        },
     }
-
-    Ok(Json(ModeSetResponse {
-        msg_type: msg_type.to_string(),
-        mode: mode.to_string(),
-    }))
 }
 
 /// Starts the auxiliary HTTP server that exposes observability and health
@@ -189,7 +194,7 @@ pub async fn start_metrics_server(address: IpAddr, port: u16, state: AppState) -
         .with_state(state);
 
     let listener = TcpListener::bind((address, port)).await?;
-    log::info!("start listening on http://{}:{}/metrics", address, port);
+    log::info!("start listening on http://{address}:{port}/metrics");
 
     axum::serve(listener, app).await?;
     Ok(())

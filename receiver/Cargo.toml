@@ -13,7 +13,5 @@ clap = { workspace = true }
 log = { workspace = true }
 prometheus = { workspace = true }
 serde = { workspace = true }
-thiserror = { workspace = true }
 time = { workspace = true }
 tokio = { workspace = true }
-tokio-util = { workspace = true }
