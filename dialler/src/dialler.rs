@@ -186,7 +186,7 @@ impl Dialler {
 
         match timeout {
             Some(timeout) => {
-                if (tokio::time::timeout(timeout, read_future).await).is_err() {
+                if tokio::time::timeout(timeout, read_future).await.is_err() {
                     log::warn!("{}    response timed out after {:?}", self.account, timeout);
                 }
             },
@@ -214,7 +214,7 @@ impl Dialler {
 
         match timeout {
             Some(timeout) => {
-                if (tokio::time::timeout(timeout, recv_future).await).is_err() {
+                if tokio::time::timeout(timeout, recv_future).await.is_err() {
                     log::warn!("{}    response timed out after {:?}", self.account, timeout);
                 }
             },
