@@ -115,10 +115,10 @@ Main metrics:
 
 | Metric name                              | Type      | Labels                  | Description                                       |
 |:-----------------------------------------|:----------|:------------------------|:--------------------------------------------------|
+| `dc09_heartbeat_received_total`          | Counter   | `account`               | Heartbeat / null messages received                |
 | `dc09_messages_received_total`           | Counter   | `token`, `account`      | Total DC-09 messages received                     |
 | `dc09_messages_failed_total`             | Counter   | `transport`, `reason`   | Messages that failed parsing / processing         |
 | `dc09_connections_total`                 | Counter   | `transport`             | Total connections accepted (tcp/udp)              |
-| `dc09_heartbeat_received_total`          | Counter   | `account`               | Heartbeat / null messages received                |
 | `dc09_active_connections`                | Gauge     | -                       | Currently active client connections               |
 | `dc09_last_message_timestamp_seconds`    | Gauge     | `account`               | Unix timestamp of most recent message per account |
 | `dc09_message_size_bytes`                | Histogram | `transport`             | Size distribution of received messages (bytes)    |
@@ -140,6 +140,8 @@ A lightweight HTTP server runs on the **same port** as Prometheus metrics (to ke
 | `{type}`  | `message`, `heartbeat`         |
 | `{mode}`  | `ack`, `nak`, `duh`, `none`    |
 
+> Currently it is possible to set separate response modes for messages and heartbeats only via HTTP API.
+
 #### Examples
 
 ```bash
@@ -149,15 +151,15 @@ curl http://192.168.1.100:9090/mode
 
 # Get mode for heartbeats
 curl http://192.168.1.100:9090/mode/heartbeat
-{"mode":"ack"}
+{"heartbeat":"ack"}
 
 # Set message response to NAK (overrides command-line setting)
 curl -X PUT http://192.168.1.100:9090/mode/message/nak
-{"type":"message","mode":"nak"}
+{"message":"nak"}
 
 # Stop responding to heartbeats (useful for timeout/retransmission testing)
 curl -X PUT http://192.168.1.100:9090/mode/heartbeat/none
-{"type":"heartbeat","mode":"none"}
+{"heartbeat":"none"}
 ```
 
 ## Scenario files

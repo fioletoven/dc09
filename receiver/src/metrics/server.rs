@@ -194,7 +194,7 @@ pub async fn start_metrics_server(address: IpAddr, port: u16, state: AppState) -
         .with_state(state);
 
     let listener = TcpListener::bind((address, port)).await?;
-    log::info!("start listening on http://{}:{}/metrics", address, port);
+    log::info!("start listening on http://{address}:{port}/metrics");
 
     axum::serve(listener, app).await?;
     Ok(())
