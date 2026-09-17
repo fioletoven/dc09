@@ -4,7 +4,6 @@ pub use self::udp::UdpServer;
 
 mod config;
 mod tcp;
-mod tls;
 mod udp;
 
 use anyhow::Result;

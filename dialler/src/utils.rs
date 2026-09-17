@@ -1,17 +1,21 @@
+use anyhow::Result;
 use common::scenarios::{DiallerConfig, Scenarios};
+use common::tls::build_tls_connector;
 use common::utils::{SharedKeysMap, get_account_name};
 use std::{sync::Arc, time::Duration};
+use tokio_rustls::TlsConnector;
 
 use crate::cli::{Args, SharedSignalsMap};
 use crate::dialler::Dialler;
 
 /// Creates all diallers from the scenarios file and command line parameters.
-pub fn create_diallers(args: &Args, signals: &SharedSignalsMap, keys: &SharedKeysMap) -> Vec<Dialler> {
+pub fn create_diallers(args: &Args, signals: &SharedSignalsMap, keys: &SharedKeysMap) -> Result<Vec<Dialler>> {
     let mut result = Vec::new();
+    let tls = build_tls_connector(args.tls_cert.as_deref(), args.insecure)?;
 
     if let Some(scenarios) = &args.scenarios {
         for (index, dialler) in scenarios.diallers.iter().enumerate() {
-            result.extend(build_diallers(args, dialler, signals, keys, (index + 1) as u16));
+            result.extend(build_diallers(args, dialler, signals, keys, tls.clone(), (index + 1) as u16));
         }
     }
 
@@ -19,10 +23,10 @@ pub fn create_diallers(args: &Args, signals: &SharedSignalsMap, keys: &SharedKey
         let dialler = DiallerConfig::new(args.account.clone(), args.sequence, args.udp, args.diallers)
             .with_line_number(args.line.clone())
             .with_receiver_number(args.receiver.clone());
-        result.extend(build_diallers(args, &dialler, signals, keys, 0));
+        result.extend(build_diallers(args, &dialler, signals, keys, tls, 0));
     }
 
-    set_timeouts(result, args.timeout.into())
+    Ok(set_timeouts(result, args.timeout.into()))
 }
 
 /// Assigns messages from the scenarios to the particular dialler queues.
@@ -65,6 +69,7 @@ fn build_diallers(
     config: &DiallerConfig,
     signals: &SharedSignalsMap,
     keys: &SharedKeysMap,
+    tls: Option<TlsConnector>,
     index: u16,
 ) -> Vec<Dialler> {
     let mut result = Vec::with_capacity(config.count.max(1).into());
@@ -73,14 +78,18 @@ fn build_diallers(
     for i in 0..config.count.max(1) {
         let account = get_account_name(i, account, &config.name, args.fixed);
 
-        result.push(
-            Dialler::new(args.address, args.port, account, Arc::clone(signals), config.udp)
-                .with_receiver_number(config.receiver.clone())
-                .with_line_prefix(config.prefix.clone())
-                .with_key(Arc::clone(keys), index)
-                .with_start_sequence(config.sequence.saturating_sub(1))
-                .with_msg_mode(args.show),
-        );
+        let mut dialler = Dialler::new(args.address, args.port, account, Arc::clone(signals), config.udp)
+            .with_receiver_number(config.receiver.clone())
+            .with_line_prefix(config.prefix.clone())
+            .with_key(Arc::clone(keys), index)
+            .with_start_sequence(config.sequence.saturating_sub(1))
+            .with_msg_mode(args.show);
+
+        if let Some(tls) = tls.clone() {
+            dialler = dialler.with_tls(tls);
+        }
+
+        result.push(dialler);
     }
 
     result

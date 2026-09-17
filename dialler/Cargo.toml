@@ -11,3 +11,4 @@ anyhow = { workspace = true }
 clap = { workspace = true }
 log = { workspace = true }
 tokio = { workspace = true }
+tokio-rustls = { workspace = true }

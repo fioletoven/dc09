@@ -1,8 +1,9 @@
 use anyhow::Result;
 use common::{dc09::DC09Message, logging::DisplayMode, scenarios::SignalConfig, time::OffsetDateTime, utils::SharedKeysMap};
 use std::{collections::VecDeque, net::IpAddr, time::Duration};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::net::{TcpStream, UdpSocket};
+use tokio_rustls::TlsConnector;
 
 use crate::cli::SharedSignalsMap;
 
@@ -17,6 +18,7 @@ pub struct Dialler {
     sequence: u16,
     key: Option<(SharedKeysMap, u16)>,
     udp: bool,
+    tls: Option<TlsConnector>,
     signals: SharedSignalsMap,
     queue: VecDeque<(u16, u16)>,
     timeout: Option<Duration>,
@@ -35,6 +37,7 @@ impl Dialler {
             sequence: 0,
             key: None,
             udp: use_udp,
+            tls: None,
             signals,
             queue: VecDeque::new(),
             timeout: None,
@@ -63,6 +66,12 @@ impl Dialler {
     /// Sets key that is used to decrypt and encrypt DC09 messages.
     pub fn with_key(mut self, keys: SharedKeysMap, index: u16) -> Self {
         self.key = Some((keys, index));
+        self
+    }
+
+    /// Enables TLS for TCP connections.
+    pub fn with_tls(mut self, tls: TlsConnector) -> Self {
+        self.tls = Some(tls);
         self
     }
 
@@ -171,9 +180,24 @@ impl Dialler {
     }
 
     async fn send_message_tcp(&mut self, message: String, plain: Option<&str>, timeout: Option<Duration>) -> Result<()> {
-        let mut stream = TcpStream::connect((self.address, self.port)).await?;
+        if let Some(tls) = self.tls.clone() {
+            let stream = TcpStream::connect((self.address, self.port)).await?;
+            let stream = tls.connect(self.address.into(), stream).await?;
+            self.send_internal(stream, &message, plain, timeout).await?;
+        } else {
+            let stream = TcpStream::connect((self.address, self.port)).await?;
+            self.send_internal(stream, &message, plain, timeout).await?;
+        }
+
+        Ok(())
+    }
+
+    async fn send_internal<T>(&self, mut stream: T, message: &str, plain: Option<&str>, timeout: Option<Duration>) -> Result<()>
+    where
+        T: AsyncRead + AsyncWrite + Unpin,
+    {
         stream.write_all(message.as_bytes()).await?;
-        log_sent_message(&self.account, &message, plain, self.mode);
+        log_sent_message(&self.account, message, plain, self.mode);
 
         let mut buffer = [0; 1024];
         let read_future = async {
@@ -194,6 +218,7 @@ impl Dialler {
         }
 
         stream.shutdown().await?;
+
         Ok(())
     }
 

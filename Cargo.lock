@@ -295,10 +295,14 @@ dependencies = [
  "hex",
  "nom",
  "rand",
+ "rustls",
+ "rustls-pki-types",
  "serde",
  "serde_json",
  "thiserror 2.0.20",
  "time",
+ "tokio",
+ "tokio-rustls",
  "tracing-appender",
  "tracing-error",
  "tracing-subscriber",
@@ -373,6 +377,7 @@ dependencies = [
  "common",
  "log",
  "tokio",
+ "tokio-rustls",
 ]
 
 [[package]]
@@ -840,10 +845,7 @@ dependencies = [
  "common",
  "log",
  "prometheus",
- "rustls",
- "rustls-pki-types",
  "serde",
- "thiserror 2.0.20",
  "time",
  "tokio",
  "tokio-rustls",

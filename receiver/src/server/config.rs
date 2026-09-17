@@ -2,6 +2,7 @@ use anyhow::Result;
 use common::dc09::parse_dc09_account_name;
 use common::logging::DisplayMode;
 use common::scenarios::DiallerConfig;
+use common::tls::build_tls_acceptor;
 use common::utils::{SharedKeysMap, get_account_name};
 use std::collections::HashMap;
 use std::fmt::Display;
@@ -9,8 +10,6 @@ use std::path::Path;
 use std::str::FromStr;
 use std::sync::atomic::{AtomicU8, Ordering};
 use tokio_rustls::TlsAcceptor;
-
-use crate::server::tls::build_tls_acceptor;
 
 pub type DiallerKeys = HashMap<String, u16>;
 

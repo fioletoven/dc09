@@ -14,6 +14,7 @@ The DC-09 Dialler Simulator is a command-line application designed to send DC-09
 - Configure message content, account number, and ID token.
 - Support for message repetition and sequence number customization.
 - Optional encryption with a user-provided key (16, 24, or 32 bytes).
+- Optional TLS for TCP connections (server-side).
 - Support for scenario files.
 
 ### Usage
@@ -25,7 +26,7 @@ The application uses the following arguments, configurable via the command line:
 | Argument           | Description                                                   | Default Value | Example                             |
 |:-------------------|:--------------------------------------------------------------|:--------------|:------------------------------------|
 | _\[ADDRESS\]_      | IP address of the receiver                                    | 127.0.0.1     | 192.168.1.100                       |
-| `--port`, `-p`     | Port number of the receiver                                   | 8080          | --port 9000                         |
+| `--port`, `-p`     | Port number of the receiver                                   | 8080          | --port 5140                         |
 | `--token`, `-t`    | ID token for the DC09 message                                 | NULL          | --token ADM-CID                     |
 | `--message`, `-m`  | Message content to send                                       | `None`        | --message "NRR\|AStart of dialler"  |
 | `--account`, `-a`  | Dialler account number (automatically incremented if possible)| 1234          | --account 5678                      |
@@ -36,7 +37,9 @@ The application uses the following arguments, configurable via the command line:
 | `--diallers`, `-d` | Number of diallers to create                                  | 1             | --diallers 20                       |
 | `--repeat`, `-c`   | Number of times to repeat the message per dialler             | 1             | --repeat 5                          |
 | `--key`, `-k`      | Encryption key for DC09 messages (16, 24, or 32 bytes)        | `None`        | --key "my16bytekey1234567890abcdef" |
-| `--udp`, `-u`      | Use a UDP connection instead of a TCP one                     | false         | --udp                               |
+| `--udp`, `-u`      | UDP connection instead of TCP                                 | false         | --udp                               |
+| `--tls-cert`       | PEM certificate chain used to verify the receiver (TLS)       | `None`        | --tls-cert ./certs/server.pem       |
+| `--insecure`       | Accept any receiver certificate without verification (TLS)    | false         | --insecure                          |
 | `--show`           | Display mode for sent messages (target, plain or both)        | target        | --show both                         |
 | `--scenarios`      | Configuration file specifying defined scenarios for the run   | `None`        | --scenarios examples/scenarios.json |
 | `--timeout`        | Timeout for waiting for a response, in seconds                | 1             | --timeout 10                        |
@@ -46,7 +49,7 @@ The application uses the following arguments, configurable via the command line:
 Send a custom message to a specific receiver with 3 repetitions:
 
 ```sh
-./dialler 192.168.1.100 --port 9000 --token "SIA-DCS" --message "NRR|Atest" --repeat 3
+./dialler 192.168.1.100 --port 5140 --token "SIA-DCS" --message "NRR|Atest" --repeat 3
 ```
 
 Send an encrypted message with a custom account and sequence number:
@@ -61,6 +64,18 @@ Send a NULL message and wait indefinitely for a response:
 ./dialler --account 1234 --line L02 --receiver R001 --timeout 0
 ```
 
+Send to a TLS-enabled receiver and trust the provided PEM certificate:
+
+```sh
+./dialler 192.168.1.100 --port 5140 --tls-cert ./certs/server.pem
+```
+
+Send to a TLS-enabled receiver without certificate verification:
+
+```sh
+./dialler 192.168.1.100 --port 5140 --insecure
+```
+
 ## Receiver simulator
 
 ### Overview
@@ -69,7 +84,8 @@ The DC-09 Receiver Simulator is a command-line test server that handles DC-09 di
 
 ### Features
 
-- Listens for DC-09 connections over **TCP** and **UDP**
+- Listens for DC-09 connections over TCP and UDP
+- Optional server-side TLS for TCP listeners using a PEM certificate and private key
 - Optional AES encryption/decryption with user-provided key (16, 24, or 32 bytes)
 - Per-account key support via scenario configuration file
 - Configurable static response mode: always `ACK`, `NAK` or `DUH`
@@ -83,28 +99,37 @@ The DC-09 Receiver Simulator is a command-line test server that handles DC-09 di
 | Argument          | Description                                                                 | Default       | Example                                    |
 |:------------------|:----------------------------------------------------------------------------|:--------------|:-------------------------------------------|
 | _[ADDRESS]_       | IP address to listen on                                                     | 127.0.0.1     | 192.168.1.100                              |
-| `--port`, `-p`    | Port number to listen on (DC-09 traffic)                                    | 8080          | `--port 9000`                              |
+| `--port`, `-p`    | Port number to listen on (DC-09 traffic)                                    | 8080          | `--port 5140`                              |
 | `--key`, `-k`     | Default decryption key (16, 24 or 32 bytes)                                 | None          | `--key "my16bytekey1234567890abcdef"`      |
 | `--metrics`, `-m` | Port number for metrics server (Prometheus metrics)                         | 9090          | `--metrics 5000`                           |
 | `--nak`           | Always send `NAK` instead of `ACK`                                          | false         | `--nak`                                    |
 | `--duh`           | Always send `DUH` instead of `ACK`                                          | false         | `--duh`                                    |
 | `--show`          | Display received messages: `target`, `plain` or `both`                      | `target`      | `--show both`                              |
 | `--scenarios`     | JSON file with per-account keys and settings                                | None          | `--scenarios examples/scenarios.json`      |
+| `--tls-cert`      | PEM certificate chain presented by the TCP server                           | None          | `--tls-cert ./certs/server.pem`            |
+| `--tls-key`       | PEM private key for the TCP server certificate                              | None          | `--tls-key ./certs/server.key`             |
 
 **Note:** `--nak` and `--duh` are mutually exclusive. If neither is set, the default is `ACK`. The HTTP API can override this behaviour at runtime.
+**Note:** `--tls-cert` and `--tls-key` enable TLS for TCP only. UDP traffic continues to use plaintext.
 
 #### Example commands
 
 Basic encrypted receiver that always NAKs:
 
 ```bash
-./receiver 192.168.1.100 --port 9000 --key "my16bytekey1234567890abcdef" --nak
+./receiver 192.168.1.100 --port 5140 --key "my16bytekey1234567890abcdef" --nak
 ```
 
 Run with per-account keys and show encrypted and decrypted DC-09 messages:
 
 ```bash
 ./receiver --port 5140 --scenarios ./test-accounts.json --show both
+```
+
+Run the TCP listener with server-side TLS:
+
+```bash
+./receiver --port 5140 --tls-cert ./certs/server.pem --tls-key ./certs/server.key
 ```
 
 ### Prometheus Metrics
