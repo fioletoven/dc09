@@ -1,4 +1,4 @@
-use aes::cipher::{BlockDecryptMut, BlockEncryptMut, KeyIvInit, block_padding::NoPadding};
+use aes::cipher::{BlockModeDecrypt, BlockModeEncrypt, KeyIvInit, block_padding::NoPadding};
 use rand::{RngExt, distr::Alphanumeric};
 
 const ZEROS_IV: [u8; 16] = [0u8; 16];
@@ -28,21 +28,21 @@ pub fn decrypt(message: &str, key: &[u8]) -> Option<String> {
 
 fn encrypt_internal<C>(message: &str, key: &[u8], iv: &[u8]) -> Option<String>
 where
-    C: BlockEncryptMut + KeyIvInit,
+    C: BlockModeEncrypt + KeyIvInit,
 {
     let mut padded = pad_message(message).into_bytes();
     let message_len = padded.len();
     let cipher = C::new_from_slices(key, iv).ok()?;
-    cipher.encrypt_padded_mut::<NoPadding>(&mut padded, message_len).ok()?;
+    cipher.encrypt_padded::<NoPadding>(&mut padded, message_len).ok()?;
     Some(hex::encode_upper(padded))
 }
 
 fn decrypt_internal<C>(mut message: Vec<u8>, key: &[u8], iv: &[u8]) -> Option<String>
 where
-    C: BlockDecryptMut + KeyIvInit,
+    C: BlockModeDecrypt + KeyIvInit,
 {
     let cipher = C::new_from_slices(key, iv).ok()?;
-    cipher.decrypt_padded_mut::<NoPadding>(&mut message).ok()?;
+    cipher.decrypt_padded::<NoPadding>(&mut message).ok()?;
     Some(core::str::from_utf8(&message).ok()?.to_string())
 }
 

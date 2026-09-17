@@ -3,6 +3,7 @@ use common::logging::DisplayMode;
 use common::scenarios::Scenarios;
 use common::utils::{SharedKeysMap, parse_key, parse_scenarios_path};
 use std::net::IpAddr;
+use std::path::{Path, PathBuf};
 
 use crate::server::{ResponseMode, ResponseModes};
 
@@ -41,6 +42,14 @@ pub struct Args {
     /// Configuration file specifying defined scenarios for the run.
     #[arg(long, value_parser = parse_scenarios_path)]
     pub scenarios: Option<Scenarios>,
+
+    /// PEM certificate chain presented by the TCP server.
+    #[arg(long, value_name = "FILE", requires = "tls_key")]
+    pub tls_cert: Option<PathBuf>,
+
+    /// PEM private key used by the TCP server.
+    #[arg(long, value_name = "FILE", requires = "tls_cert")]
+    pub tls_key: Option<PathBuf>,
 }
 
 impl Args {
@@ -58,5 +67,10 @@ impl Args {
         } else {
             ResponseModes::new(ResponseMode::Ack, ResponseMode::Ack)
         }
+    }
+
+    /// Returns configured TLS certificate and key paths when TCP TLS is enabled.
+    pub fn tls_files(&self) -> Option<(&Path, &Path)> {
+        self.tls_cert.as_deref().zip(self.tls_key.as_deref())
     }
 }

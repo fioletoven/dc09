@@ -23,7 +23,7 @@ async fn main() -> Result<()> {
 async fn run_diallers(args: cli::Args) -> Result<()> {
     let keys = args.build_keys_map();
     let signals = args.build_signals_map();
-    let mut diallers = create_diallers(&args, &signals, &keys);
+    let mut diallers = create_diallers(&args, &signals, &keys)?;
     setup_message_queues(&mut diallers, &args);
 
     let mut tasks = Vec::new();

@@ -2,6 +2,7 @@ use clap::Parser;
 use common::logging::DisplayMode;
 use common::scenarios::{Scenarios, SignalConfig};
 use common::utils::{SharedKeysMap, parse_account_prefix, parse_key, parse_receiver, parse_scenarios_path};
+use std::path::PathBuf;
 use std::{collections::HashMap, net::IpAddr, sync::Arc};
 
 pub type SharedSignalsMap = Arc<HashMap<(u16, u16), SignalConfig>>;
@@ -58,9 +59,17 @@ pub struct Args {
     #[arg(long, short, value_parser = parse_key)]
     pub key: Option<String>,
 
-    /// Use a UDP connection instead of a TCP one.
-    #[arg(long, short)]
+    /// UDP connection instead of TCP.
+    #[arg(long, short, conflicts_with_all = ["tls_cert", "insecure"])]
     pub udp: bool,
+
+    /// PEM certificate chain used to verify the receiver for a TLS TCP connection.
+    #[arg(long, value_name = "FILE", conflicts_with_all = ["udp", "insecure"])]
+    pub tls_cert: Option<PathBuf>,
+
+    /// Accept any receiver certificate without verification for a TLS TCP connection.
+    #[arg(long, conflicts_with_all = ["udp", "tls_cert"])]
+    pub insecure: bool,
 
     /// Display mode for sent messages.
     #[arg(long, value_enum, value_name = "MODE", default_value = "target")]

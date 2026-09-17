@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.2.1 - 2026-09-17
+
+### Features
+
+- support for server-side TLS TCP connections
+
 ## 0.2.0 - 2026-03-07
 
 ### Features

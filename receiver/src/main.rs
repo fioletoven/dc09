@@ -31,32 +31,39 @@ async fn main() -> Result<()> {
     });
 
     log::info!("start listening on {}:{}", args.address, args.port);
-    let (tcp, udp) = tokio::join!(
-        run_receiver::<TcpServer>(&args, state.clone()),
-        run_receiver::<UdpServer>(&args, state.clone())
-    );
-
-    if let Err(error) = tcp {
-        log::error!("tcp: {error}");
-    }
-
-    if let Err(error) = udp {
-        log::error!("udp: {error}");
+    tokio::select! {
+        _ = run_receiver::<TcpServer>(&args, state.clone(), "tcp") => (),
+        _ = run_receiver::<UdpServer>(&args, state.clone(), "udp") => (),
     }
 
     Ok(())
 }
 
-async fn run_receiver<T: Server>(args: &cli::Args, state: AppState) -> Result<()> {
-    let config = create_server_config(args);
+async fn run_receiver<T: Server>(args: &cli::Args, state: AppState, protocol: &str) {
+    if let Err(error) = run_receiver_internal::<T>(args, state, protocol == "tcp").await {
+        log::error!("{protocol}: {error}");
+    }
+}
+
+async fn run_receiver_internal<T: Server>(args: &cli::Args, state: AppState, is_tcp: bool) -> Result<()> {
+    let config = create_server_config(args, is_tcp)?;
     let mut server = T::new(format!("{}:{}", args.address, args.port), config, state).await?;
     server.run().await?;
 
     Ok(())
 }
 
-fn create_server_config(args: &cli::Args) -> ServerConfig {
+fn create_server_config(args: &cli::Args, is_tcp: bool) -> Result<ServerConfig> {
     let keys = args.build_keys_map();
     let diallers = args.scenarios.as_ref().map(|s| s.diallers.clone()).unwrap_or_default();
-    ServerConfig::new(&diallers, keys).with_msg_mode(args.show)
+    let config = ServerConfig::new(&diallers, keys).with_msg_mode(args.show);
+
+    if !is_tcp {
+        return Ok(config);
+    }
+
+    match args.tls_files() {
+        Some((cert_path, key_path)) => config.with_tls(cert_path, key_path),
+        None => Ok(config),
+    }
 }
