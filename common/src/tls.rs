@@ -39,20 +39,18 @@ pub fn build_tls_connector(cert_path: Option<&Path>, insecure: bool) -> Result<O
             .with_custom_certificate_verifier(Arc::new(NoCertificateVerification))
             .with_no_client_auth();
         Ok(Some(TlsConnector::from(Arc::new(config))))
-    } else {
-        if let Some(cert_path) = cert_path {
-            let certs = load_cert_chain(cert_path)?;
-            let mut roots = RootCertStore::empty();
-            if roots.add_parsable_certificates(certs).0 == 0 {
-                return Err(TlsConfigError::EmptyCertificateChain {
-                    path: cert_path.to_path_buf(),
-                });
-            }
-            let config = ClientConfig::builder().with_root_certificates(roots).with_no_client_auth();
-            Ok(Some(TlsConnector::from(Arc::new(config))))
-        } else {
-            Ok(None)
+    } else if let Some(cert_path) = cert_path {
+        let certs = load_cert_chain(cert_path)?;
+        let mut roots = RootCertStore::empty();
+        if roots.add_parsable_certificates(certs).0 == 0 {
+            return Err(TlsConfigError::EmptyCertificateChain {
+                path: cert_path.to_path_buf(),
+            });
         }
+        let config = ClientConfig::builder().with_root_certificates(roots).with_no_client_auth();
+        Ok(Some(TlsConnector::from(Arc::new(config))))
+    } else {
+        Ok(None)
     }
 }
 

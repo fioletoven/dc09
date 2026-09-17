@@ -15,7 +15,7 @@ pub fn create_diallers(args: &Args, signals: &SharedSignalsMap, keys: &SharedKey
 
     if let Some(scenarios) = &args.scenarios {
         for (index, dialler) in scenarios.diallers.iter().enumerate() {
-            result.extend(build_diallers(args, dialler, signals, keys, tls.clone(), (index + 1) as u16));
+            result.extend(build_diallers(args, dialler, signals, keys, tls.as_ref(), (index + 1) as u16));
         }
     }
 
@@ -23,7 +23,7 @@ pub fn create_diallers(args: &Args, signals: &SharedSignalsMap, keys: &SharedKey
         let dialler = DiallerConfig::new(args.account.clone(), args.sequence, args.udp, args.diallers)
             .with_line_number(args.line.clone())
             .with_receiver_number(args.receiver.clone());
-        result.extend(build_diallers(args, &dialler, signals, keys, tls, 0));
+        result.extend(build_diallers(args, &dialler, signals, keys, tls.as_ref(), 0));
     }
 
     Ok(set_timeouts(result, args.timeout.into()))
@@ -69,7 +69,7 @@ fn build_diallers(
     config: &DiallerConfig,
     signals: &SharedSignalsMap,
     keys: &SharedKeysMap,
-    tls: Option<TlsConnector>,
+    tls: Option<&TlsConnector>,
     index: u16,
 ) -> Vec<Dialler> {
     let mut result = Vec::with_capacity(config.count.max(1).into());
@@ -85,7 +85,7 @@ fn build_diallers(
             .with_start_sequence(config.sequence.saturating_sub(1))
             .with_msg_mode(args.show);
 
-        if let Some(tls) = tls.clone() {
+        if let Some(tls) = tls.cloned() {
             dialler = dialler.with_tls(tls);
         }
 
