@@ -1,11 +1,16 @@
+use anyhow::Result;
 use common::dc09::parse_dc09_account_name;
 use common::logging::DisplayMode;
 use common::scenarios::DiallerConfig;
 use common::utils::{SharedKeysMap, get_account_name};
 use std::collections::HashMap;
 use std::fmt::Display;
+use std::path::Path;
 use std::str::FromStr;
 use std::sync::atomic::{AtomicU8, Ordering};
+use tokio_rustls::TlsAcceptor;
+
+use crate::server::tls::build_tls_acceptor;
 
 pub type DiallerKeys = HashMap<String, u16>;
 
@@ -14,6 +19,7 @@ pub struct ServerConfig {
     pub diallers: DiallerKeys,
     pub keys: SharedKeysMap,
     pub mode: DisplayMode,
+    tls_acceptor: Option<TlsAcceptor>,
 }
 
 impl ServerConfig {
@@ -34,6 +40,7 @@ impl ServerConfig {
             diallers,
             keys,
             mode: DisplayMode::Target,
+            tls_acceptor: None,
         }
     }
 
@@ -41,6 +48,17 @@ impl ServerConfig {
     pub fn with_msg_mode(mut self, mode: DisplayMode) -> Self {
         self.mode = mode;
         self
+    }
+
+    /// Enables TLS for TCP listeners using the provided certificate and private key.
+    pub fn with_tls(mut self, cert_path: &Path, key_path: &Path) -> Result<Self> {
+        self.tls_acceptor = Some(build_tls_acceptor(cert_path, key_path)?);
+        Ok(self)
+    }
+
+    /// Returns configured TLS acceptor for TCP listeners.
+    pub fn tls_acceptor(&self) -> Option<TlsAcceptor> {
+        self.tls_acceptor.clone()
     }
 
     /// Returns key for the specified message.

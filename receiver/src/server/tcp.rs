@@ -2,9 +2,10 @@ use anyhow::Result;
 use common::dc09::DC09Message;
 use std::sync::atomic::Ordering;
 use std::{net::SocketAddr, sync::Arc};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::{TcpListener, TcpStream, ToSocketAddrs};
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
+use tokio::net::{TcpListener, ToSocketAddrs};
 use tokio::task::JoinHandle;
+use tokio_rustls::TlsAcceptor;
 
 use crate::metrics::AppState;
 use crate::server::{ResponseMode, ResponseModes};
@@ -21,6 +22,7 @@ pub struct TcpServer {
     connections: Vec<JoinHandle<()>>,
     config: Arc<ServerConfig>,
     state: AppState,
+    tls_acceptor: Option<TlsAcceptor>,
 }
 
 impl Server for TcpServer {
@@ -28,11 +30,17 @@ impl Server for TcpServer {
     /// **Note** that `key` can be provided to decrypt encrypted DC09 messages.
     async fn new(address: impl ToSocketAddrs, config: ServerConfig, state: AppState) -> Result<Self> {
         let listener = TcpListener::bind(address).await?;
+        let tls_acceptor = config.tls_acceptor();
+        if tls_acceptor.is_some() {
+            log::info!("listener runs in TLS mode");
+        }
+
         Ok(Self {
             listener,
             connections: Vec::new(),
             config: Arc::new(config),
             state,
+            tls_acceptor,
         })
     }
 
@@ -43,12 +51,23 @@ impl Server for TcpServer {
         loop {
             match self.listener.accept().await {
                 Ok((stream, addr)) => {
-                    let task = tokio::spawn(process_connection(
-                        stream,
-                        addr,
-                        Arc::clone(&self.config),
-                        Arc::clone(&self.state.response_modes),
-                    ));
+                    increase_total_connections(TRANSPORT_NAME);
+                    let task = tokio::spawn({
+                        let config = Arc::clone(&self.config);
+                        let mode = Arc::clone(&self.state.response_modes);
+                        let tls_acceptor = self.tls_acceptor.clone();
+
+                        async move {
+                            match tls_acceptor {
+                                Some(acceptor) => match acceptor.accept(stream).await {
+                                    Ok(stream) => process_connection(stream, addr, config, mode).await,
+                                    Err(error) => log::warn!("TLS handshake failed for {addr}: {error}"),
+                                },
+                                None => process_connection(stream, addr, config, mode).await,
+                            }
+                        }
+                    });
+
                     self.connections.push(task);
                 },
                 Err(e) => log::error!("error accepting connection: {e}"),
@@ -61,9 +80,11 @@ impl Server for TcpServer {
     }
 }
 
-async fn process_connection(mut socket: TcpStream, addr: SocketAddr, config: Arc<ServerConfig>, mode: Arc<ResponseModes>) {
+async fn process_connection<S>(mut socket: S, addr: SocketAddr, config: Arc<ServerConfig>, mode: Arc<ResponseModes>)
+where
+    S: AsyncRead + AsyncWrite + Unpin,
+{
     log::debug!("accepted new connection from {addr}");
-    increase_total_connections(TRANSPORT_NAME);
     increase_active_connections();
 
     let mut buffer = [0; 2048];
@@ -103,14 +124,17 @@ async fn process_connection(mut socket: TcpStream, addr: SocketAddr, config: Arc
     }
 }
 
-async fn process_message(
-    socket: &mut TcpStream,
+async fn process_message<S>(
+    socket: &mut S,
     addr: &SocketAddr,
     received_message: &str,
     config: &ServerConfig,
     message_mode: ResponseMode,
     heartbeat_mode: ResponseMode,
-) -> bool {
+) -> bool
+where
+    S: AsyncWrite + Unpin,
+{
     let key = config.get_key_for_message(received_message);
     match DC09Message::try_from(received_message, key) {
         Ok(msg) => {
