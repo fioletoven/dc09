@@ -20,3 +20,9 @@ pub trait Server: Sized {
     /// Runs the server.
     async fn run(&mut self) -> Result<()>;
 }
+
+struct ProcessMessageResult {
+    keep_alive: bool,
+    valid: bool,
+    response: Option<String>,
+}

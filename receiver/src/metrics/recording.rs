@@ -11,7 +11,6 @@ use tokio::sync::{mpsc, oneshot};
 pub enum Transport {
     Udp,
     Tcp,
-    Tls,
 }
 
 impl std::fmt::Display for Transport {
@@ -19,7 +18,6 @@ impl std::fmt::Display for Transport {
         match self {
             Transport::Udp => write!(f, "udp"),
             Transport::Tcp => write!(f, "tcp"),
-            Transport::Tls => write!(f, "tls"),
         }
     }
 }
@@ -30,7 +28,7 @@ pub struct RecordedEntry {
     pub timestamp_ms: u128,
     pub transport: Transport,
     pub peer: String,
-    pub received: String,
+    pub message: String,
     pub response: Option<String>,
     pub valid: bool,
 }
@@ -52,7 +50,7 @@ impl RecordedEntry {
             timestamp_ms,
             transport,
             peer: peer.to_string(),
-            received: received.into(),
+            message: received.into(),
             response,
             valid,
         }
@@ -112,10 +110,12 @@ impl RecorderHandle {
         Self { is_recording, tx }
     }
 
+    pub fn is_recording(&self) -> bool {
+        self.is_recording.load(Ordering::Relaxed)
+    }
+
     pub fn send_entry(&self, entry: RecordedEntry) {
-        if self.is_recording.load(Ordering::Relaxed) {
-            let _ = self.tx.send(RecordingEvent::Entry(entry));
-        }
+        let _ = self.tx.send(RecordingEvent::Entry(entry));
     }
 
     pub fn start(&self) {
@@ -145,10 +145,10 @@ impl RecorderHandle {
     }
 }
 
-pub type QueryReply = oneshot::Sender<RecorderSnapshot>;
-pub type StatusReply = oneshot::Sender<RecorderStatus>;
+type QueryReply = oneshot::Sender<RecorderSnapshot>;
+type StatusReply = oneshot::Sender<RecorderStatus>;
 
-pub enum RecordingEvent {
+enum RecordingEvent {
     Entry(RecordedEntry),
     Start,
     Stop,
@@ -174,24 +174,24 @@ fn spawn_recorder(status: Arc<AtomicBool>) -> mpsc::UnboundedSender<RecordingEve
 
                 RecordingEvent::Start => {
                     if status.load(Ordering::Relaxed) {
-                        log::debug!("[recorder] start ignored - already recording");
+                        log::debug!("start ignored - already recording");
                     } else {
-                        log::info!("[recorder] started");
+                        log::info!("started");
                         status.store(true, Ordering::Relaxed);
                     }
                 },
 
                 RecordingEvent::Stop => {
                     if status.load(Ordering::Relaxed) {
-                        log::info!("[recorder] stopped ({} entries)", entries.len());
+                        log::info!("stopped ({} entries)", entries.len());
                         status.store(false, Ordering::Relaxed);
                     } else {
-                        log::debug!("[recorder] stop ignored - not recording");
+                        log::debug!("stop ignored - not recording");
                     }
                 },
 
                 RecordingEvent::Restart => {
-                    log::info!("[recorder] restarted (discarding {} entries)", entries.len());
+                    log::info!("restarted (discarding {} entries)", entries.len());
                     entries.clear();
                     status.store(true, Ordering::Relaxed);
                 },
@@ -212,21 +212,21 @@ fn spawn_recorder(status: Arc<AtomicBool>) -> mpsc::UnboundedSender<RecordingEve
             }
         }
 
-        log::warn!("[recorder] channel closed, task exiting");
+        log::warn!("channel closed, task exiting");
     });
 
     tx
 }
 
 fn snapshot_to_csv(snapshot: &RecorderSnapshot) -> String {
-    const HEADER: &str = "timestamp_ms,transport,peer,valid,received,response\n";
+    const HEADER: &str = "timestamp_ms,transport,peer,valid,message,response\n";
 
     let mut out = String::with_capacity(HEADER.len() + snapshot.entries.len() * 128);
     out.push_str(HEADER);
 
     for e in &snapshot.entries {
         let _ = write!(out, "{},{},{},{},", e.timestamp_ms, e.transport, e.peer, e.valid);
-        csv_write_escaped(&mut out, &e.received);
+        csv_write_escaped(&mut out, &e.message);
         out.push(',');
         if let Some(r) = e.response.as_deref() {
             csv_write_escaped(&mut out, r)
