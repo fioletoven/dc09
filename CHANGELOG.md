@@ -1,5 +1,11 @@
 # Change Log
 
+## WIP
+
+### Features
+
+- add signals recording to the receiver app
+
 ## 0.2.1 - 2026-09-17
 
 ### Features

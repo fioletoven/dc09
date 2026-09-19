@@ -1,10 +1,8 @@
 use anyhow::Result;
-use axum::Json;
-use axum::body::Body;
 use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, Response, StatusCode};
-use axum::routing::{get, post, put};
-use axum::{Router, response::IntoResponse};
+use axum::routing::{get, put};
+use axum::{Json, Router, body::Body, response::IntoResponse};
 use prometheus::{self, Encoder, TextEncoder};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
@@ -13,7 +11,7 @@ use std::str::FromStr;
 use std::sync::{Arc, atomic::AtomicBool, atomic::Ordering};
 use tokio::net::TcpListener;
 
-use crate::metrics::recording::{RecorderHandle, RecorderStatus};
+use crate::metrics::recording::{RecorderHandle, RecorderStatus, RecordingStatus};
 use crate::server::{ResponseMode, ResponseModes};
 
 /// Shared application state used by the HTTP server handlers.
@@ -104,6 +102,11 @@ impl FromStr for MessageType {
             other => Err(format!("unknown message type '{other}'")),
         }
     }
+}
+
+#[derive(Serialize)]
+struct RecordChangeResponse {
+    status: RecordingStatus,
 }
 
 /// Query parameters for `GET /record`.
@@ -275,21 +278,27 @@ async fn record_status(State(state): State<AppState>) -> Result<Json<RecorderSta
 }
 
 /// `POST /record/start` - begin recording DC09 messages.
-async fn record_start(State(state): State<AppState>) -> impl IntoResponse {
+async fn record_start(State(state): State<AppState>) -> Json<RecordChangeResponse> {
     state.recorder.start();
-    StatusCode::NO_CONTENT
+    Json(RecordChangeResponse {
+        status: RecordingStatus::Recording,
+    })
 }
 
 /// `POST /record/stop` - stop recording (entries are preserved).
-async fn record_stop(State(state): State<AppState>) -> impl IntoResponse {
+async fn record_stop(State(state): State<AppState>) -> Json<RecordChangeResponse> {
     state.recorder.stop();
-    StatusCode::NO_CONTENT
+    Json(RecordChangeResponse {
+        status: RecordingStatus::Idle,
+    })
 }
 
 /// `POST /record/restart` - clear all entries and start fresh.
-async fn record_restart(State(state): State<AppState>) -> impl IntoResponse {
+async fn record_restart(State(state): State<AppState>) -> Json<RecordChangeResponse> {
     state.recorder.restart();
-    StatusCode::NO_CONTENT
+    Json(RecordChangeResponse {
+        status: RecordingStatus::Recording,
+    })
 }
 
 /// Starts the auxiliary HTTP server that exposes observability, health,
@@ -304,9 +313,9 @@ pub async fn start_metrics_server(address: IpAddr, port: u16, state: AppState) -
         .route("/mode/{msg_type}/{mode}", put(set_mode))
         .route("/record", get(record_get))
         .route("/record/status", get(record_status))
-        .route("/record/start", post(record_start))
-        .route("/record/stop", post(record_stop))
-        .route("/record/restart", post(record_restart))
+        .route("/record/start", put(record_start))
+        .route("/record/stop", put(record_stop))
+        .route("/record/restart", put(record_restart))
         .with_state(state);
 
     let listener = TcpListener::bind((address, port)).await?;

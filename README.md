@@ -90,6 +90,7 @@ The DC-09 Receiver Simulator is a command-line test server that handles DC-09 di
 - Per-account key support via scenario configuration file
 - Configurable static response mode: always `ACK`, `NAK` or `DUH`
 - Dynamic response mode switching via HTTP API (override command-line setting)
+- Received signals recording
 - Prometheus metrics
 
 ### Usage
@@ -152,13 +153,18 @@ Example Grafana dashboard: [grafana-dashboard.json](./examples/grafana-dashboard
 
 ### HTTP Control API
 
-A lightweight HTTP server runs on the **same port** as Prometheus metrics (to keep firewall/NAT rules simple).
+A lightweight HTTP server runs on the **same port** as Prometheus metrics.
 
 | Method | Endpoint               | Description                          |
 |--------|------------------------|--------------------------------------|
 | `GET`  | `/mode`                | Get response modes for all types     |
 | `GET`  | `/mode/{type}`         | Get response mode for a single type  |
 | `PUT`  | `/mode/{type}/{mode}`  | Set response mode for a single type  |
+| `GET`  | `/record`              | Get all recorded signals (see below) |
+| `GET`  | `/record/status`       | Get recording status                 |
+| `PUT`  | `/record/start`        | Start signals recording              |
+| `PUT`  | `/record/stop`         | Stop signals recording               |
+| `PUT`  | `/record/restart`      | Restart signals recording            |
 
 | Parameter | Values                         |
 |-----------|--------------------------------|
@@ -166,6 +172,24 @@ A lightweight HTTP server runs on the **same port** as Prometheus metrics (to ke
 | `{mode}`  | `ack`, `nak`, `duh`, `none`    |
 
 > Currently it is possible to set separate response modes for messages and heartbeats only via HTTP API.
+
+#### GET /record
+
+Returns recorded signals filtered by type. Output format is controlled via the `Accept` header.
+
+**Query parameters:**
+
+| Parameter     | Type      | Description                 |
+|---------------|-----------|-----------------------------|
+| `messages`    | `boolean` | Include recorded messages   |
+| `heartbeats`  | `boolean` | Include recorded heartbeats |
+
+**Accept header:**
+
+| Value              | Description                   |
+|--------------------|-------------------------------|
+| `application/json` | Returns JSON output (default) |
+| `text/csv`         | Returns CSV output            |
 
 #### Examples
 
@@ -185,6 +209,9 @@ curl -X PUT http://192.168.1.100:9090/mode/message/nak
 # Stop responding to heartbeats (useful for timeout/retransmission testing)
 curl -X PUT http://192.168.1.100:9090/mode/heartbeat/none
 {"heartbeat":"none"}
+
+# List recorded messages and heartbeats (equals default) as CSV
+curl -H "Accept: text/csv" "http://192.168.1.100:9090/record?messages=true&heartbeats=true"
 ```
 
 ## Scenario files
