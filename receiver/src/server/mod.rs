@@ -22,7 +22,7 @@ pub trait Server: Sized {
 }
 
 struct ProcessMessageResult {
-    keep_alive: bool,
-    valid: bool,
+    is_valid: bool,
+    is_heartbeat: bool,
     response: Option<String>,
 }

@@ -28,18 +28,20 @@ pub struct RecordedEntry {
     pub timestamp_ms: u128,
     pub transport: Transport,
     pub peer: String,
+    pub valid: bool,
+    pub heartbeat: bool,
     pub message: String,
     pub response: Option<String>,
-    pub valid: bool,
 }
 
 impl RecordedEntry {
     pub fn new(
         transport: Transport,
         peer: SocketAddr,
-        received: impl Into<String>,
-        response: Option<String>,
         valid: bool,
+        heartbeat: bool,
+        message: impl Into<String>,
+        response: Option<String>,
     ) -> Self {
         let timestamp_ms = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -50,9 +52,10 @@ impl RecordedEntry {
             timestamp_ms,
             transport,
             peer: peer.to_string(),
-            message: received.into(),
-            response,
             valid,
+            heartbeat,
+            message: message.into(),
+            response,
         }
     }
 }
@@ -93,7 +96,9 @@ impl RecorderSnapshot {
 #[derive(Debug, Clone, Serialize)]
 pub struct RecorderStatus {
     pub status: RecordingStatus,
-    pub count: usize,
+    pub messages: usize,
+    pub heartbeats: usize,
+    pub total: usize,
 }
 
 #[derive(Clone)]
@@ -131,9 +136,9 @@ impl RecorderHandle {
     }
 
     /// Returns a snapshot of the current recording state and all entries.
-    pub async fn query(&self) -> Option<RecorderSnapshot> {
+    pub async fn query(&self, messages: bool, heartbeats: bool) -> Option<RecorderSnapshot> {
         let (tx, rx) = oneshot::channel();
-        self.tx.send(RecordingEvent::Query(tx)).ok()?;
+        self.tx.send(RecordingEvent::Query(messages, heartbeats, tx)).ok()?;
         rx.await.ok()
     }
 
@@ -153,7 +158,7 @@ enum RecordingEvent {
     Start,
     Stop,
     Restart,
-    Query(QueryReply),
+    Query(bool, bool, QueryReply),
     Status(StatusReply),
 }
 
@@ -196,17 +201,24 @@ fn spawn_recorder(status: Arc<AtomicBool>) -> mpsc::UnboundedSender<RecordingEve
                     status.store(true, Ordering::Relaxed);
                 },
 
-                RecordingEvent::Query(reply) => {
+                RecordingEvent::Query(messages, heartbeats, reply) => {
                     let _ = reply.send(RecorderSnapshot {
                         status: status.load(Ordering::Relaxed).into(),
-                        entries: entries.clone(),
+                        entries: entries
+                            .iter()
+                            .filter(|s| s.heartbeat == heartbeats || s.heartbeat != messages)
+                            .cloned()
+                            .collect(),
                     });
                 },
 
                 RecordingEvent::Status(reply) => {
+                    let heartbeats = entries.iter().filter(|s| s.heartbeat).count();
                     let _ = reply.send(RecorderStatus {
                         status: status.load(Ordering::Relaxed).into(),
-                        count: entries.len(),
+                        messages: entries.len().saturating_sub(heartbeats),
+                        heartbeats,
+                        total: entries.len(),
                     });
                 },
             }
@@ -219,13 +231,17 @@ fn spawn_recorder(status: Arc<AtomicBool>) -> mpsc::UnboundedSender<RecordingEve
 }
 
 fn snapshot_to_csv(snapshot: &RecorderSnapshot) -> String {
-    const HEADER: &str = "timestamp_ms,transport,peer,valid,message,response\n";
+    const HEADER: &str = "timestamp_ms,transport,peer,valid,heartbeat,message,response\n";
 
     let mut out = String::with_capacity(HEADER.len() + snapshot.entries.len() * 128);
     out.push_str(HEADER);
 
     for e in &snapshot.entries {
-        let _ = write!(out, "{},{},{},{},", e.timestamp_ms, e.transport, e.peer, e.valid);
+        let _ = write!(
+            out,
+            "{},{},{},{},{},",
+            e.timestamp_ms, e.transport, e.peer, e.valid, e.heartbeat
+        );
         csv_write_escaped(&mut out, &e.message);
         out.push(',');
         if let Some(r) = e.response.as_deref() {

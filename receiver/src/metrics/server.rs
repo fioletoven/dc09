@@ -1,12 +1,12 @@
 use anyhow::Result;
 use axum::Json;
 use axum::body::Body;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, Response, StatusCode};
 use axum::routing::{get, post, put};
 use axum::{Router, response::IntoResponse};
 use prometheus::{self, Encoder, TextEncoder};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::net::IpAddr;
 use std::str::FromStr;
@@ -28,6 +28,18 @@ pub struct AppState {
 #[derive(Serialize)]
 struct ErrorResponse {
     error: String,
+}
+
+impl ErrorResponse {
+    pub fn to_json(&self) -> String {
+        serde_json::to_string(self).unwrap_or_default()
+    }
+}
+
+impl From<&str> for ErrorResponse {
+    fn from(value: &str) -> Self {
+        ErrorResponse { error: value.to_owned() }
+    }
 }
 
 #[derive(Serialize)]
@@ -66,7 +78,7 @@ impl ModesResponse {
     }
 }
 
-/// Message type path parameter
+/// Message type for `GET /mode/{msg_type}`.
 #[derive(Debug, Clone, Copy)]
 enum MessageType {
     Message,
@@ -91,6 +103,31 @@ impl FromStr for MessageType {
             "heartbeat" => Ok(MessageType::Heartbeat),
             other => Err(format!("unknown message type '{other}'")),
         }
+    }
+}
+
+/// Query parameters for `GET /record`.
+#[derive(Debug, Deserialize)]
+struct RecordQuery {
+    messages: Option<bool>,
+    heartbeats: Option<bool>,
+}
+
+impl RecordQuery {
+    /// Resolve the effective flags, applying defaults where params were omitted.
+    fn resolve(&self) -> Result<(bool, bool), &'static str> {
+        let (messages, heartbeats) = match (self.messages, self.heartbeats) {
+            (None, None) => (true, true),
+            (Some(m), None) => (m, !m),
+            (None, Some(h)) => (!h, h),
+            (Some(m), Some(h)) => (m, h),
+        };
+
+        if !messages && !heartbeats {
+            return Err("at least one of 'messages' or 'heartbeats' must be true");
+        }
+
+        Ok((messages, heartbeats))
     }
 }
 
@@ -186,17 +223,29 @@ async fn set_mode(
 }
 
 /// `GET /record` - retrieve recorded entries.
-async fn record_get(State(state): State<AppState>, headers: HeaderMap) -> Response<Body> {
+async fn record_get(State(state): State<AppState>, Query(query): Query<RecordQuery>, headers: HeaderMap) -> Response<Body> {
+    let (messages, heartbeats) = match query.resolve() {
+        Ok(flags) => flags,
+        Err(reason) => {
+            return Response::builder()
+                .status(StatusCode::BAD_REQUEST)
+                .header("content-type", "application/json")
+                .body(Body::from(ErrorResponse::from(reason).to_json()))
+                .unwrap();
+        },
+    };
+
     let want_csv = headers
         .get(axum::http::header::ACCEPT)
         .and_then(|v| v.to_str().ok())
         .map(|v| v.contains("text/csv"))
         .unwrap_or(false);
 
-    match state.recorder.query().await {
+    match state.recorder.query(messages, heartbeats).await {
         None => Response::builder()
             .status(StatusCode::INTERNAL_SERVER_ERROR)
-            .body(Body::from("recorder unavailable"))
+            .header("content-type", "application/json")
+            .body(Body::from(ErrorResponse::from("recorder unavailable").to_json()))
             .unwrap(),
         Some(snapshot) if want_csv => Response::builder()
             .status(StatusCode::OK)
@@ -243,8 +292,8 @@ async fn record_restart(State(state): State<AppState>) -> impl IntoResponse {
     StatusCode::NO_CONTENT
 }
 
-/// Starts the auxiliary HTTP server that exposes observability and health
-/// endpoints for Kubernetes and Prometheus.
+/// Starts the auxiliary HTTP server that exposes observability, health,
+/// recording control, and response mode endpoints.
 pub async fn start_metrics_server(address: IpAddr, port: u16, state: AppState) -> Result<()> {
     let app = Router::new()
         .route("/metrics", get(metrics_handler))
@@ -261,7 +310,7 @@ pub async fn start_metrics_server(address: IpAddr, port: u16, state: AppState) -
         .with_state(state);
 
     let listener = TcpListener::bind((address, port)).await?;
-    log::info!("start listening on http://{address}:{port}/metrics");
+    log::info!("start listening on http://{address}:{port}");
 
     axum::serve(listener, app).await?;
     Ok(())

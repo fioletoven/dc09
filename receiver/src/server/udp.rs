@@ -61,9 +61,10 @@ impl Server for UdpServer {
                         self.state.recorder.send_entry(RecordedEntry::new(
                             Transport::Udp,
                             addr,
+                            outcome.is_valid,
+                            outcome.is_heartbeat,
                             msg.trim().to_owned(),
                             outcome.response,
-                            outcome.valid,
                         ));
                     }
                 },
@@ -89,7 +90,8 @@ fn process_message(
             log::info!("{} -> {}", addr, get_received_message(received_message, &msg, config.mode));
             process_valid_message_metrics(TRANSPORT_NAME, received_message, &msg);
 
-            let mode = if msg.is_heartbeat() { heartbeat_mode } else { message_mode };
+            let is_heartbeat = msg.is_heartbeat();
+            let mode = if is_heartbeat { heartbeat_mode } else { message_mode };
             let response = if mode != ResponseMode::None {
                 let response = build_response_message(msg, key, mode);
                 let trimmed = response.trim().to_owned();
@@ -103,8 +105,8 @@ fn process_message(
             };
 
             ProcessMessageResult {
-                keep_alive: true,
-                valid: true,
+                is_valid: true,
+                is_heartbeat,
                 response,
             }
         },
@@ -113,8 +115,8 @@ fn process_message(
             process_invalid_message_metrics(TRANSPORT_NAME, received_message, &e);
 
             ProcessMessageResult {
-                keep_alive: false,
-                valid: false,
+                is_valid: false,
+                is_heartbeat: false,
                 response: None,
             }
         },
