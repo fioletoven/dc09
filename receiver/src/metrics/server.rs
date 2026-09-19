@@ -1,8 +1,10 @@
 use anyhow::Result;
 use axum::Json;
-use axum::extract::Path;
-use axum::routing::put;
-use axum::{Router, extract::State, http::StatusCode, response::IntoResponse, routing::get};
+use axum::body::Body;
+use axum::extract::{Path, State};
+use axum::http::{HeaderMap, Response, StatusCode};
+use axum::routing::{get, post, put};
+use axum::{Router, response::IntoResponse};
 use prometheus::{self, Encoder, TextEncoder};
 use serde::Serialize;
 use std::fmt::{Display, Formatter};
@@ -11,6 +13,7 @@ use std::str::FromStr;
 use std::sync::{Arc, atomic::AtomicBool, atomic::Ordering};
 use tokio::net::TcpListener;
 
+use crate::metrics::recording::{RecorderHandle, RecorderStatus};
 use crate::server::{ResponseMode, ResponseModes};
 
 /// Shared application state used by the HTTP server handlers.
@@ -19,6 +22,7 @@ pub struct AppState {
     pub tcp_ready: Arc<AtomicBool>,
     pub udp_ready: Arc<AtomicBool>,
     pub response_modes: Arc<ResponseModes>,
+    pub recorder: RecorderHandle,
 }
 
 #[derive(Serialize)]
@@ -181,6 +185,64 @@ async fn set_mode(
     }
 }
 
+/// `GET /record` - retrieve recorded entries.
+async fn record_get(State(state): State<AppState>, headers: HeaderMap) -> Response<Body> {
+    let want_csv = headers
+        .get(axum::http::header::ACCEPT)
+        .and_then(|v| v.to_str().ok())
+        .map(|v| v.contains("text/csv"))
+        .unwrap_or(false);
+
+    match state.recorder.query().await {
+        None => Response::builder()
+            .status(StatusCode::INTERNAL_SERVER_ERROR)
+            .body(Body::from("recorder unavailable"))
+            .unwrap(),
+        Some(snapshot) if want_csv => Response::builder()
+            .status(StatusCode::OK)
+            .header("content-type", "text/csv; charset=utf-8")
+            .header("content-disposition", "attachment; filename=\"recording.csv\"")
+            .body(Body::from(snapshot.to_csv()))
+            .unwrap(),
+        Some(snapshot) => Response::builder()
+            .status(StatusCode::OK)
+            .header("content-type", "application/json")
+            .body(Body::from(snapshot.to_json()))
+            .unwrap(),
+    }
+}
+
+/// `GET /record/status` - lightweight status check without returning entries.
+async fn record_status(State(state): State<AppState>) -> Result<Json<RecorderStatus>, (StatusCode, Json<ErrorResponse>)> {
+    match state.recorder.status().await {
+        None => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse {
+                error: "recorder unavailable".to_owned(),
+            }),
+        )),
+        Some(snapshot) => Ok(Json(snapshot)),
+    }
+}
+
+/// `POST /record/start` - begin recording DC09 messages.
+async fn record_start(State(state): State<AppState>) -> impl IntoResponse {
+    state.recorder.start();
+    StatusCode::NO_CONTENT
+}
+
+/// `POST /record/stop` - stop recording (entries are preserved).
+async fn record_stop(State(state): State<AppState>) -> impl IntoResponse {
+    state.recorder.stop();
+    StatusCode::NO_CONTENT
+}
+
+/// `POST /record/restart` - clear all entries and start fresh.
+async fn record_restart(State(state): State<AppState>) -> impl IntoResponse {
+    state.recorder.restart();
+    StatusCode::NO_CONTENT
+}
+
 /// Starts the auxiliary HTTP server that exposes observability and health
 /// endpoints for Kubernetes and Prometheus.
 pub async fn start_metrics_server(address: IpAddr, port: u16, state: AppState) -> Result<()> {
@@ -191,6 +253,11 @@ pub async fn start_metrics_server(address: IpAddr, port: u16, state: AppState) -
         .route("/mode", get(get_modes))
         .route("/mode/{msg_type}", get(get_mode))
         .route("/mode/{msg_type}/{mode}", put(set_mode))
+        .route("/record", get(record_get))
+        .route("/record/status", get(record_status))
+        .route("/record/start", post(record_start))
+        .route("/record/stop", post(record_stop))
+        .route("/record/restart", post(record_restart))
         .with_state(state);
 
     let listener = TcpListener::bind((address, port)).await?;
