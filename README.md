@@ -156,7 +156,7 @@ Example Grafana dashboard: [grafana-dashboard.json](./examples/grafana-dashboard
 A lightweight HTTP server runs on the **same port** as Prometheus metrics.
 
 | Method | Endpoint               | Description                          |
-|--------|------------------------|--------------------------------------|
+|:-------|:-----------------------|:-------------------------------------|
 | `GET`  | `/mode`                | Get response modes for all types     |
 | `GET`  | `/mode/{type}`         | Get response mode for a single type  |
 | `PUT`  | `/mode/{type}/{mode}`  | Set response mode for a single type  |
@@ -167,7 +167,7 @@ A lightweight HTTP server runs on the **same port** as Prometheus metrics.
 | `PUT`  | `/record/restart`      | Restart signals recording            |
 
 | Parameter | Values                         |
-|-----------|--------------------------------|
+|:----------|:-------------------------------|
 | `{type}`  | `message`, `heartbeat`         |
 | `{mode}`  | `ack`, `nak`, `duh`, `none`    |
 
@@ -179,15 +179,15 @@ Returns recorded signals filtered by type. Output format is controlled via the `
 
 **Query parameters:**
 
-| Parameter     | Type      | Description                 |
-|---------------|-----------|-----------------------------|
-| `messages`    | `boolean` | Include recorded messages   |
-| `heartbeats`  | `boolean` | Include recorded heartbeats |
+| Parameter     | Type      | Description                 | Default      |
+|:--------------|:---------:|:----------------------------|:------------:|
+| `messages`    | `boolean` | Include recorded messages   | true         |
+| `heartbeats`  | `boolean` | Include recorded heartbeats | true         |
 
 **Accept header:**
 
 | Value              | Description                   |
-|--------------------|-------------------------------|
+|:-------------------|:------------------------------|
 | `application/json` | Returns JSON output (default) |
 | `text/csv`         | Returns CSV output            |
 
@@ -210,7 +210,7 @@ curl -X PUT http://192.168.1.100:9090/mode/message/nak
 curl -X PUT http://192.168.1.100:9090/mode/heartbeat/none
 {"heartbeat":"none"}
 
-# List recorded messages and heartbeats (equals default) as CSV
+# Get recorded messages and heartbeats as CSV
 curl -H "Accept: text/csv" "http://192.168.1.100:9090/record?messages=true&heartbeats=true"
 ```
 
@@ -237,7 +237,7 @@ The root object contains two main arrays: `diallers` and `scenarios`.
 Each entry in the `diallers` array represents a dialler configuration with the following properties:
 
 | Property   | Type     | Description                                            | Required |
-|------------|----------|--------------------------------------------------------|----------|
+|:-----------|:--------:|:-------------------------------------------------------|:--------:|
 | `name`     | String   | Unique identifier for the dialler (e.g., "1234").      | Yes      |
 | `count`    | Integer  | Number of diallers to create with this configuration.  | No       |
 | `key`      | String   | Encryption key (16, 24, or 32 bytes) or `null`.        | No       |
@@ -254,7 +254,7 @@ Each entry in the `diallers` array represents a dialler configuration with the f
 Each entry in the `scenarios` array defines a test scenario with the following properties:
 
 | Property   | Type     | Description                                         | Required |
-|------------|----------|-----------------------------------------------------|----------|
+|:-----------|:--------:|-----------------------------------------------------|:--------:|
 | `id`       | Integer  | Unique identifier for the scenario (e.g., 1).       | Yes      |
 | `sequence` | Array    | Ordered list of signals to be sent in the scenario. | Yes      |
 
@@ -263,7 +263,7 @@ Each entry in the `scenarios` array defines a test scenario with the following p
 Each entry in the `sequence` array represents a signal with the following properties:
 
 | Property   | Type     | Description                                                      | Required |
-|------------|----------|------------------------------------------------------------------|----------|
+|:-----------|:--------:|:-----------------------------------------------------------------|:--------:|
 | `token`    | String   | ID token of the signal (e.g., "NULL", "SIA-DCS", "ADM-CID").     | Yes      |
 | `message`  | String   | Message content for the signal (e.g., "NRR\|AStart of dialler"). | No       |
 | `delay`    | Integer  | Delay in milliseconds before sending the signal (e.g., 5000).    | No       |

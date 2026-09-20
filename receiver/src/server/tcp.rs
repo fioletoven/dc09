@@ -162,16 +162,16 @@ where
 
             let is_heartbeat = msg.is_heartbeat();
             let mode = if is_heartbeat { heartbeat_mode } else { message_mode };
-            let response = if mode != ResponseMode::None {
+            let response = if mode == ResponseMode::None {
+                None
+            } else {
                 let response = build_response_message(msg, key, mode);
                 let trimmed = response.trim().to_owned();
 
-                log::info!("{} <- {}", addr, trimmed);
+                log::info!("{addr} <- {trimmed}");
                 let _ = socket.write_all(response.as_bytes()).await;
 
                 Some(trimmed)
-            } else {
-                None
             };
 
             ProcessMessageResult {

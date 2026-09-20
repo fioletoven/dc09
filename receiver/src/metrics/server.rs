@@ -23,6 +23,7 @@ pub struct AppState {
     pub recorder: RecorderHandle,
 }
 
+/// Error response for API endpoints.
 #[derive(Serialize)]
 struct ErrorResponse {
     error: String,
@@ -241,8 +242,7 @@ async fn record_get(State(state): State<AppState>, Query(query): Query<RecordQue
     let want_csv = headers
         .get(axum::http::header::ACCEPT)
         .and_then(|v| v.to_str().ok())
-        .map(|v| v.contains("text/csv"))
-        .unwrap_or(false);
+        .is_some_and(|v| v.contains("text/csv"));
 
     match state.recorder.query(messages, heartbeats).await {
         None => Response::builder()

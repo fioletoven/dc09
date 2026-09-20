@@ -33,8 +33,8 @@ async fn main() -> Result<()> {
 
     log::info!("start listening on {}:{}", args.address, args.port);
     tokio::select! {
-        _ = run_receiver::<TcpServer>(&args, state.clone(), "tcp") => (),
-        _ = run_receiver::<UdpServer>(&args, state.clone(), "udp") => (),
+        () = run_receiver::<TcpServer>(&args, state.clone(), "tcp") => (),
+        () = run_receiver::<UdpServer>(&args, state.clone(), "udp") => (),
     }
 
     Ok(())

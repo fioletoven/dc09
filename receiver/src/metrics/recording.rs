@@ -101,6 +101,7 @@ pub struct RecorderStatus {
     pub total: usize,
 }
 
+/// Spawns recorder task and keeps sender for the [`RecordingEvent`] to drive the recorder.
 #[derive(Clone)]
 pub struct RecorderHandle {
     is_recording: Arc<AtomicBool>,
@@ -108,6 +109,7 @@ pub struct RecorderHandle {
 }
 
 impl RecorderHandle {
+    /// Creates new [`RecorderHandle`] instance and spawns recorder task.
     pub fn new() -> Self {
         let is_recording = Arc::new(AtomicBool::new(false));
         let tx = spawn_recorder(Arc::clone(&is_recording));
@@ -115,22 +117,29 @@ impl RecorderHandle {
         Self { is_recording, tx }
     }
 
+    /// Returns `true` if the recorder is in `recording` state.
     pub fn is_recording(&self) -> bool {
         self.is_recording.load(Ordering::Relaxed)
     }
 
+    /// Sends [`RecordedEntry`] to the recorder.\
+    /// **Note** that it will be processed only if the recorder is in `recording` state.
     pub fn send_entry(&self, entry: RecordedEntry) {
         let _ = self.tx.send(RecordingEvent::Entry(entry));
     }
 
+    /// Starts signals recording.
     pub fn start(&self) {
         let _ = self.tx.send(RecordingEvent::Start);
     }
 
+    /// Stops signals recording.
     pub fn stop(&self) {
         let _ = self.tx.send(RecordingEvent::Stop);
     }
 
+    /// Restart signals recording.\
+    /// **Note** that it discards all previously recorded signals.
     pub fn restart(&self) {
         let _ = self.tx.send(RecordingEvent::Restart);
     }
@@ -176,31 +185,19 @@ fn spawn_recorder(status: Arc<AtomicBool>) -> mpsc::UnboundedSender<RecordingEve
                         entries.push(entry);
                     }
                 },
-
                 RecordingEvent::Start => {
-                    if status.load(Ordering::Relaxed) {
-                        log::debug!("start ignored - already recording");
-                    } else {
-                        log::info!("started");
-                        status.store(true, Ordering::Relaxed);
-                    }
+                    log::info!("started");
+                    status.store(true, Ordering::Relaxed);
                 },
-
                 RecordingEvent::Stop => {
-                    if status.load(Ordering::Relaxed) {
-                        log::info!("stopped ({} entries)", entries.len());
-                        status.store(false, Ordering::Relaxed);
-                    } else {
-                        log::debug!("stop ignored - not recording");
-                    }
+                    log::info!("stopped ({} entries)", entries.len());
+                    status.store(false, Ordering::Relaxed);
                 },
-
                 RecordingEvent::Restart => {
                     log::info!("restarted (discarding {} entries)", entries.len());
                     entries.clear();
                     status.store(true, Ordering::Relaxed);
                 },
-
                 RecordingEvent::Query(messages, heartbeats, reply) => {
                     let _ = reply.send(RecorderSnapshot {
                         status: status.load(Ordering::Relaxed).into(),
@@ -211,7 +208,6 @@ fn spawn_recorder(status: Arc<AtomicBool>) -> mpsc::UnboundedSender<RecordingEve
                             .collect(),
                     });
                 },
-
                 RecordingEvent::Status(reply) => {
                     let heartbeats = entries.iter().filter(|s| s.heartbeat).count();
                     let _ = reply.send(RecorderStatus {
@@ -245,7 +241,7 @@ fn snapshot_to_csv(snapshot: &RecorderSnapshot) -> String {
         csv_write_escaped(&mut out, &e.message);
         out.push(',');
         if let Some(r) = e.response.as_deref() {
-            csv_write_escaped(&mut out, r)
+            csv_write_escaped(&mut out, r);
         }
         out.push('\n');
     }
