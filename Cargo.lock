@@ -301,7 +301,6 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.20",
  "time",
- "tokio",
  "tokio-rustls",
  "tracing-appender",
  "tracing-error",
