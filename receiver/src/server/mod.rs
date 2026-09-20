@@ -20,3 +20,10 @@ pub trait Server: Sized {
     /// Runs the server.
     async fn run(&mut self) -> Result<()>;
 }
+
+/// Common struct representing `process_message` result for both tcp and udp servers.
+struct ProcessMessageResult {
+    is_valid: bool,
+    is_heartbeat: bool,
+    response: Option<String>,
+}

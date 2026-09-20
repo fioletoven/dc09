@@ -7,8 +7,8 @@ use tokio::net::{TcpListener, ToSocketAddrs};
 use tokio::task::JoinHandle;
 use tokio_rustls::TlsAcceptor;
 
-use crate::metrics::AppState;
-use crate::server::{ResponseMode, ResponseModes};
+use crate::metrics::{AppState, RecordedEntry, RecorderHandle, Transport};
+use crate::server::{ProcessMessageResult, ResponseMode, ResponseModes};
 use crate::utils::{build_response_message, get_received_message};
 use crate::utils::{decrease_active_connections, increase_active_connections, increase_total_connections};
 use crate::utils::{process_invalid_message_metrics, process_valid_message_metrics};
@@ -55,15 +55,16 @@ impl Server for TcpServer {
                     let task = tokio::spawn({
                         let config = Arc::clone(&self.config);
                         let mode = Arc::clone(&self.state.response_modes);
+                        let recorder = self.state.recorder.clone();
                         let tls_acceptor = self.tls_acceptor.clone();
 
                         async move {
                             match tls_acceptor {
                                 Some(acceptor) => match acceptor.accept(stream).await {
-                                    Ok(stream) => process_connection(stream, addr, config, mode).await,
+                                    Ok(stream) => process_connection(stream, addr, config, mode, recorder).await,
                                     Err(error) => log::warn!("TLS handshake failed for {addr}: {error}"),
                                 },
-                                None => process_connection(stream, addr, config, mode).await,
+                                None => process_connection(stream, addr, config, mode, recorder).await,
                             }
                         }
                     });
@@ -80,8 +81,13 @@ impl Server for TcpServer {
     }
 }
 
-async fn process_connection<S>(mut socket: S, addr: SocketAddr, config: Arc<ServerConfig>, mode: Arc<ResponseModes>)
-where
+async fn process_connection<S>(
+    mut socket: S,
+    addr: SocketAddr,
+    config: Arc<ServerConfig>,
+    mode: Arc<ResponseModes>,
+    recorder: RecorderHandle,
+) where
     S: AsyncRead + AsyncWrite + Unpin,
 {
     log::debug!("accepted new connection from {addr}");
@@ -101,7 +107,20 @@ where
             },
             Ok(n) => match str::from_utf8(&buffer[..n]) {
                 Ok(msg) => {
-                    if !process_message(&mut socket, &addr, msg, &config, mode.message(), mode.heartbeat()).await {
+                    let outcome = process_message(&mut socket, &addr, msg, &config, mode.message(), mode.heartbeat()).await;
+
+                    if recorder.is_recording() {
+                        recorder.send_entry(RecordedEntry::new(
+                            Transport::Tcp,
+                            addr,
+                            outcome.is_valid,
+                            outcome.is_heartbeat,
+                            msg.trim().to_owned(),
+                            outcome.response,
+                        ));
+                    }
+
+                    if !outcome.is_valid {
                         break;
                     }
                 },
@@ -131,7 +150,7 @@ async fn process_message<S>(
     config: &ServerConfig,
     message_mode: ResponseMode,
     heartbeat_mode: ResponseMode,
-) -> bool
+) -> ProcessMessageResult
 where
     S: AsyncWrite + Unpin,
 {
@@ -141,20 +160,35 @@ where
             log::info!("{} -> {}", addr, get_received_message(received_message, &msg, config.mode));
             process_valid_message_metrics(TRANSPORT_NAME, received_message, &msg);
 
-            let mode = if msg.is_heartbeat() { heartbeat_mode } else { message_mode };
-            if mode != ResponseMode::None {
+            let is_heartbeat = msg.is_heartbeat();
+            let mode = if is_heartbeat { heartbeat_mode } else { message_mode };
+            let response = if mode == ResponseMode::None {
+                None
+            } else {
                 let response = build_response_message(msg, key, mode);
-                log::info!("{} <- {}", addr, response.trim());
-                let _ = socket.write_all(response.as_bytes()).await;
-            }
+                let trimmed = response.trim().to_owned();
 
-            true
+                log::info!("{addr} <- {trimmed}");
+                let _ = socket.write_all(response.as_bytes()).await;
+
+                Some(trimmed)
+            };
+
+            ProcessMessageResult {
+                is_valid: true,
+                is_heartbeat,
+                response,
+            }
         },
         Err(e) => {
             log::error!("{} -> {}: {}", addr, e, received_message.trim());
             process_invalid_message_metrics(TRANSPORT_NAME, received_message, &e);
 
-            false
+            ProcessMessageResult {
+                is_valid: false,
+                is_heartbeat: false,
+                response: None,
+            }
         },
     }
 }

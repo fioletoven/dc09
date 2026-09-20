@@ -5,8 +5,8 @@ use std::{net::SocketAddr, sync::Arc};
 use tokio::net::{ToSocketAddrs, UdpSocket};
 use tokio::sync::mpsc::{UnboundedSender, unbounded_channel};
 
-use crate::metrics::AppState;
-use crate::server::ResponseMode;
+use crate::metrics::{AppState, RecordedEntry, Transport};
+use crate::server::{ProcessMessageResult, ResponseMode};
 use crate::utils::{build_response_message, get_received_message};
 use crate::utils::{increase_total_connections, process_invalid_message_metrics, process_valid_message_metrics};
 use crate::{Server, ServerConfig};
@@ -55,7 +55,18 @@ impl Server for UdpServer {
             match str::from_utf8(&buffer[..n]) {
                 Ok(msg) => {
                     let mode = &self.state.response_modes;
-                    process_message(&tx, addr, msg, &self.config, mode.message(), mode.heartbeat());
+                    let outcome = process_message(&tx, addr, msg, &self.config, mode.message(), mode.heartbeat());
+
+                    if self.state.recorder.is_recording() {
+                        self.state.recorder.send_entry(RecordedEntry::new(
+                            Transport::Udp,
+                            addr,
+                            outcome.is_valid,
+                            outcome.is_heartbeat,
+                            msg.trim().to_owned(),
+                            outcome.response,
+                        ));
+                    }
                 },
                 Err(err) => {
                     log::error!("received invalid UTF-8 sequence: {err}");
@@ -72,23 +83,42 @@ fn process_message(
     config: &ServerConfig,
     message_mode: ResponseMode,
     heartbeat_mode: ResponseMode,
-) {
+) -> ProcessMessageResult {
     let key = config.get_key_for_message(received_message);
     match DC09Message::try_from(received_message, key) {
         Ok(msg) => {
             log::info!("{} -> {}", addr, get_received_message(received_message, &msg, config.mode));
             process_valid_message_metrics(TRANSPORT_NAME, received_message, &msg);
 
-            let mode = if msg.is_heartbeat() { heartbeat_mode } else { message_mode };
-            if mode != ResponseMode::None {
+            let is_heartbeat = msg.is_heartbeat();
+            let mode = if is_heartbeat { heartbeat_mode } else { message_mode };
+            let response = if mode == ResponseMode::None {
+                None
+            } else {
                 let response = build_response_message(msg, key, mode);
-                log::info!("{} <- {}", addr, response.trim());
+                let trimmed = response.trim().to_owned();
+
+                log::info!("{addr} <- {trimmed}");
                 let _ = tx.send((response, addr));
+
+                Some(trimmed)
+            };
+
+            ProcessMessageResult {
+                is_valid: true,
+                is_heartbeat,
+                response,
             }
         },
         Err(e) => {
             log::error!("{} -> {}: {}", addr, e, received_message.trim());
             process_invalid_message_metrics(TRANSPORT_NAME, received_message, &e);
+
+            ProcessMessageResult {
+                is_valid: false,
+                is_heartbeat: false,
+                response: None,
+            }
         },
     }
 }

@@ -3,7 +3,7 @@ resolver = "3"
 members = ["common", "dialler", "receiver"]
 
 [workspace.package]
-version = "0.2.1"
+version = "0.2.2"
 edition = "2024"
 rust-version = "1.95"
 license = "MIT"

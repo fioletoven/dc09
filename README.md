@@ -90,6 +90,7 @@ The DC-09 Receiver Simulator is a command-line test server that handles DC-09 di
 - Per-account key support via scenario configuration file
 - Configurable static response mode: always `ACK`, `NAK` or `DUH`
 - Dynamic response mode switching via HTTP API (override command-line setting)
+- Received signals recording
 - Prometheus metrics
 
 ### Usage
@@ -152,20 +153,43 @@ Example Grafana dashboard: [grafana-dashboard.json](./examples/grafana-dashboard
 
 ### HTTP Control API
 
-A lightweight HTTP server runs on the **same port** as Prometheus metrics (to keep firewall/NAT rules simple).
+A lightweight HTTP server runs on the **same port** as Prometheus metrics.
 
 | Method | Endpoint               | Description                          |
-|--------|------------------------|--------------------------------------|
+|:-------|:-----------------------|:-------------------------------------|
 | `GET`  | `/mode`                | Get response modes for all types     |
 | `GET`  | `/mode/{type}`         | Get response mode for a single type  |
 | `PUT`  | `/mode/{type}/{mode}`  | Set response mode for a single type  |
+| `GET`  | `/recording`           | Get all recorded signals (see below) |
+| `GET`  | `/recording/status`    | Get recording status                 |
+| `PUT`  | `/recording/start`     | Start signals recording              |
+| `PUT`  | `/recording/stop`      | Stop signals recording               |
+| `PUT`  | `/recording/restart`   | Restart signals recording            |
 
 | Parameter | Values                         |
-|-----------|--------------------------------|
+|:----------|:-------------------------------|
 | `{type}`  | `message`, `heartbeat`         |
 | `{mode}`  | `ack`, `nak`, `duh`, `none`    |
 
 > Currently it is possible to set separate response modes for messages and heartbeats only via HTTP API.
+
+#### GET /recording
+
+Returns recorded signals filtered by type. Output format is controlled via the `Accept` header.
+
+**Query parameters:**
+
+| Parameter     | Type      | Description                 | Default      |
+|:--------------|:---------:|:----------------------------|:------------:|
+| `messages`    | `boolean` | Include recorded messages   | true         |
+| `heartbeats`  | `boolean` | Include recorded heartbeats | true         |
+
+**Accept header:**
+
+| Value              | Description                   |
+|:-------------------|:------------------------------|
+| `application/json` | Returns JSON output (default) |
+| `text/csv`         | Returns CSV output            |
 
 #### Examples
 
@@ -185,6 +209,9 @@ curl -X PUT http://192.168.1.100:9090/mode/message/nak
 # Stop responding to heartbeats (useful for timeout/retransmission testing)
 curl -X PUT http://192.168.1.100:9090/mode/heartbeat/none
 {"heartbeat":"none"}
+
+# Get recorded messages and heartbeats as CSV
+curl -H "Accept: text/csv" "http://192.168.1.100:9090/recording?messages=true&heartbeats=true"
 ```
 
 ## Scenario files
@@ -210,7 +237,7 @@ The root object contains two main arrays: `diallers` and `scenarios`.
 Each entry in the `diallers` array represents a dialler configuration with the following properties:
 
 | Property   | Type     | Description                                            | Required |
-|------------|----------|--------------------------------------------------------|----------|
+|:-----------|:--------:|:-------------------------------------------------------|:--------:|
 | `name`     | String   | Unique identifier for the dialler (e.g., "1234").      | Yes      |
 | `count`    | Integer  | Number of diallers to create with this configuration.  | No       |
 | `key`      | String   | Encryption key (16, 24, or 32 bytes) or `null`.        | No       |
@@ -227,7 +254,7 @@ Each entry in the `diallers` array represents a dialler configuration with the f
 Each entry in the `scenarios` array defines a test scenario with the following properties:
 
 | Property   | Type     | Description                                         | Required |
-|------------|----------|-----------------------------------------------------|----------|
+|:-----------|:--------:|-----------------------------------------------------|:--------:|
 | `id`       | Integer  | Unique identifier for the scenario (e.g., 1).       | Yes      |
 | `sequence` | Array    | Ordered list of signals to be sent in the scenario. | Yes      |
 
@@ -236,7 +263,7 @@ Each entry in the `scenarios` array defines a test scenario with the following p
 Each entry in the `sequence` array represents a signal with the following properties:
 
 | Property   | Type     | Description                                                      | Required |
-|------------|----------|------------------------------------------------------------------|----------|
+|:-----------|:--------:|:-----------------------------------------------------------------|:--------:|
 | `token`    | String   | ID token of the signal (e.g., "NULL", "SIA-DCS", "ADM-CID").     | Yes      |
 | `message`  | String   | Message content for the signal (e.g., "NRR\|AStart of dialler"). | No       |
 | `delay`    | Integer  | Delay in milliseconds before sending the signal (e.g., 5000).    | No       |

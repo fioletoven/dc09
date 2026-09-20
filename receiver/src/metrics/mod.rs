@@ -3,6 +3,8 @@ pub use self::prometheus::{
     messages_received, register_all,
 };
 pub use self::server::{AppState, start_metrics_server};
+pub use recording::{RecordedEntry, RecorderHandle, Transport};
 
 mod prometheus;
+mod recording;
 mod server;

@@ -19,7 +19,7 @@ pub fn initialize(app_name: &str) -> Result<tracing_appender::non_blocking::Work
     let (non_blocking_appender, guard) = tracing_appender::non_blocking(stdout);
 
     let timer = time::format_description::parse_borrowed::<1>(
-        "[year]-[month padding:zero]-[day padding:zero] [hour]:[minute]:[second].[subsecond digits:3]",
+        "[year]-[month padding:zero]-[day padding:zero] [hour]:[minute]:[second].[subsecond digits:4]",
     )?;
     let time_offset = time::UtcOffset::current_local_offset().unwrap_or(time::UtcOffset::UTC);
     let timer = tracing_subscriber::fmt::time::OffsetTime::new(time_offset, timer);

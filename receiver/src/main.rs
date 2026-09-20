@@ -4,7 +4,7 @@ use server::{Server, ServerConfig, TcpServer, UdpServer};
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
-use crate::metrics::AppState;
+use crate::metrics::{AppState, RecorderHandle};
 
 mod cli;
 mod metrics;
@@ -20,6 +20,7 @@ async fn main() -> Result<()> {
         tcp_ready: Arc::new(AtomicBool::new(false)),
         udp_ready: Arc::new(AtomicBool::new(false)),
         response_modes: Arc::new(args.response_modes()),
+        recorder: RecorderHandle::new(),
     };
 
     metrics::register_all();
@@ -32,8 +33,8 @@ async fn main() -> Result<()> {
 
     log::info!("start listening on {}:{}", args.address, args.port);
     tokio::select! {
-        _ = run_receiver::<TcpServer>(&args, state.clone(), "tcp") => (),
-        _ = run_receiver::<UdpServer>(&args, state.clone(), "udp") => (),
+        () = run_receiver::<TcpServer>(&args, state.clone(), "tcp") => (),
+        () = run_receiver::<UdpServer>(&args, state.clone(), "udp") => (),
     }
 
     Ok(())
