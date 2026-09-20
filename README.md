@@ -160,11 +160,11 @@ A lightweight HTTP server runs on the **same port** as Prometheus metrics.
 | `GET`  | `/mode`                | Get response modes for all types     |
 | `GET`  | `/mode/{type}`         | Get response mode for a single type  |
 | `PUT`  | `/mode/{type}/{mode}`  | Set response mode for a single type  |
-| `GET`  | `/record`              | Get all recorded signals (see below) |
-| `GET`  | `/record/status`       | Get recording status                 |
-| `PUT`  | `/record/start`        | Start signals recording              |
-| `PUT`  | `/record/stop`         | Stop signals recording               |
-| `PUT`  | `/record/restart`      | Restart signals recording            |
+| `GET`  | `/recording`           | Get all recorded signals (see below) |
+| `GET`  | `/recording/status`    | Get recording status                 |
+| `PUT`  | `/recording/start`     | Start signals recording              |
+| `PUT`  | `/recording/stop`      | Stop signals recording               |
+| `PUT`  | `/recording/restart`   | Restart signals recording            |
 
 | Parameter | Values                         |
 |:----------|:-------------------------------|
@@ -173,7 +173,7 @@ A lightweight HTTP server runs on the **same port** as Prometheus metrics.
 
 > Currently it is possible to set separate response modes for messages and heartbeats only via HTTP API.
 
-#### GET /record
+#### GET /recording
 
 Returns recorded signals filtered by type. Output format is controlled via the `Accept` header.
 
@@ -211,7 +211,7 @@ curl -X PUT http://192.168.1.100:9090/mode/heartbeat/none
 {"heartbeat":"none"}
 
 # Get recorded messages and heartbeats as CSV
-curl -H "Accept: text/csv" "http://192.168.1.100:9090/record?messages=true&heartbeats=true"
+curl -H "Accept: text/csv" "http://192.168.1.100:9090/recording?messages=true&heartbeats=true"
 ```
 
 ## Scenario files

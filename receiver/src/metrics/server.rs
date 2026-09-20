@@ -110,7 +110,7 @@ struct RecordChangeResponse {
     status: RecordingStatus,
 }
 
-/// Query parameters for `GET /record`.
+/// Query parameters for `GET /recording`.
 #[derive(Debug, Deserialize)]
 struct RecordQuery {
     messages: Option<bool>,
@@ -226,8 +226,8 @@ async fn set_mode(
     }
 }
 
-/// `GET /record` - retrieve recorded entries.
-async fn record_get(State(state): State<AppState>, Query(query): Query<RecordQuery>, headers: HeaderMap) -> Response<Body> {
+/// `GET /recording` - retrieve recorded entries.
+async fn recording_get(State(state): State<AppState>, Query(query): Query<RecordQuery>, headers: HeaderMap) -> Response<Body> {
     let (messages, heartbeats) = match query.resolve() {
         Ok(flags) => flags,
         Err(reason) => {
@@ -264,8 +264,8 @@ async fn record_get(State(state): State<AppState>, Query(query): Query<RecordQue
     }
 }
 
-/// `GET /record/status` - lightweight status check without returning entries.
-async fn record_status(State(state): State<AppState>) -> Result<Json<RecorderStatus>, (StatusCode, Json<ErrorResponse>)> {
+/// `GET /recording/status` - lightweight status check without returning entries.
+async fn recording_status(State(state): State<AppState>) -> Result<Json<RecorderStatus>, (StatusCode, Json<ErrorResponse>)> {
     match state.recorder.status().await {
         None => Err((
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -277,24 +277,24 @@ async fn record_status(State(state): State<AppState>) -> Result<Json<RecorderSta
     }
 }
 
-/// `POST /record/start` - begin recording DC09 messages.
-async fn record_start(State(state): State<AppState>) -> Json<RecordChangeResponse> {
+/// `POST /recording/start` - begin recording DC09 messages.
+async fn recording_start(State(state): State<AppState>) -> Json<RecordChangeResponse> {
     state.recorder.start();
     Json(RecordChangeResponse {
         status: RecordingStatus::Recording,
     })
 }
 
-/// `POST /record/stop` - stop recording (entries are preserved).
-async fn record_stop(State(state): State<AppState>) -> Json<RecordChangeResponse> {
+/// `POST /recording/stop` - stop recording (entries are preserved).
+async fn recording_stop(State(state): State<AppState>) -> Json<RecordChangeResponse> {
     state.recorder.stop();
     Json(RecordChangeResponse {
         status: RecordingStatus::Idle,
     })
 }
 
-/// `POST /record/restart` - clear all entries and start fresh.
-async fn record_restart(State(state): State<AppState>) -> Json<RecordChangeResponse> {
+/// `POST /recording/restart` - clear all entries and start fresh.
+async fn recording_restart(State(state): State<AppState>) -> Json<RecordChangeResponse> {
     state.recorder.restart();
     Json(RecordChangeResponse {
         status: RecordingStatus::Recording,
@@ -311,11 +311,11 @@ pub async fn start_metrics_server(address: IpAddr, port: u16, state: AppState) -
         .route("/mode", get(get_modes))
         .route("/mode/{msg_type}", get(get_mode))
         .route("/mode/{msg_type}/{mode}", put(set_mode))
-        .route("/record", get(record_get))
-        .route("/record/status", get(record_status))
-        .route("/record/start", put(record_start))
-        .route("/record/stop", put(record_stop))
-        .route("/record/restart", put(record_restart))
+        .route("/recording", get(recording_get))
+        .route("/recording/status", get(recording_status))
+        .route("/recording/start", put(recording_start))
+        .route("/recording/stop", put(recording_stop))
+        .route("/recording/restart", put(recording_restart))
         .with_state(state);
 
     let listener = TcpListener::bind((address, port)).await?;
