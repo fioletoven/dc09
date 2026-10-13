@@ -18,6 +18,7 @@ pub struct ServerConfig {
     pub diallers: DiallerKeys,
     pub keys: SharedKeysMap,
     pub mode: DisplayMode,
+    pub strict_tls_shutdown: bool,
     tls_acceptor: Option<TlsAcceptor>,
 }
 
@@ -39,6 +40,7 @@ impl ServerConfig {
             diallers,
             keys,
             mode: DisplayMode::Target,
+            strict_tls_shutdown: false,
             tls_acceptor: None,
         }
     }
@@ -50,9 +52,15 @@ impl ServerConfig {
     }
 
     /// Enables TLS for TCP listeners using the provided certificate and private key.
-    pub fn with_tls(mut self, cert_path: &Path, key_path: &Path) -> Result<Self> {
+    pub fn with_tls(mut self, cert_path: &Path, key_path: &Path, strict_shutdown: bool) -> Result<Self> {
         self.tls_acceptor = Some(build_tls_acceptor(cert_path, key_path)?);
+        self.strict_tls_shutdown = strict_shutdown;
         Ok(self)
+    }
+
+    /// Returns `true` if this configuration has TLS enabled for TCP listener.
+    pub fn is_tls_enabled(&self) -> bool {
+        self.tls_acceptor.is_some()
     }
 
     /// Returns configured TLS acceptor for TCP listeners.

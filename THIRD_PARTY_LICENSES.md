@@ -223,7 +223,7 @@ This project uses the following third-party dependencies:
 
 ### Used by
 
-- **aws-lc-sys** (v0.45.0) - [repository](https://github.com/aws/aws-lc-rs)
+- **aws-lc-sys** (v0.46.0) - [repository](https://github.com/aws/aws-lc-rs)
 - **dunce** (v1.0.5) - [repository](https://gitlab.com/kornelski/dunce)
 - **ryu** (v1.0.23) - [repository](https://github.com/dtolnay/ryu)
 - **sync_wrapper** (v1.0.2) - [repository](https://github.com/Actyx/sync_wrapper)
@@ -399,7 +399,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ### Used by
 
-- **aws-lc-sys** (v0.45.0) - [repository](https://github.com/aws/aws-lc-rs)
+- **aws-lc-sys** (v0.46.0) - [repository](https://github.com/aws/aws-lc-rs)
 
 ### License text
 
@@ -484,8 +484,8 @@ third-party/chromium/LICENSE.
 
 ### Used by
 
-- **aws-lc-rs** (v1.18.1) - [repository](https://github.com/aws/aws-lc-rs)
-- **aws-lc-sys** (v0.45.0) - [repository](https://github.com/aws/aws-lc-rs)
+- **aws-lc-rs** (v1.18.2) - [repository](https://github.com/aws/aws-lc-rs)
+- **aws-lc-sys** (v0.46.0) - [repository](https://github.com/aws/aws-lc-rs)
 
 ### License text
 
@@ -498,45 +498,6 @@ Copyright (c) 1995-2003 by Internet Software Consortium
 Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
 
 THE SOFTWARE IS PROVIDED "AS IS" AND ISC DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL ISC BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-
-```
-
----
-
-## MIT License
-
-### Used by
-
-- **lazy_static** (v1.5.0) - [repository](https://github.com/rust-lang-nursery/lazy-static.rs)
-
-### License text
-
-```
-Copyright (c) 2010 The Rust Project Developers
-
-Permission is hereby granted, free of charge, to any
-person obtaining a copy of this software and associated
-documentation files (the "Software"), to deal in the
-Software without restriction, including without
-limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software
-is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice
-shall be included in all copies or substantial portions
-of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
-ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
-TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
 
 ```
 
@@ -658,10 +619,10 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **cc** (v1.4.6) - [repository](https://github.com/rust-lang/cc-rs)
+- **cc** (v1.8.0) - [repository](https://github.com/rust-lang/cc-rs)
 - **cfg-if** (v1.0.5) - [repository](https://github.com/rust-lang/cfg-if)
 - **cmake** (v0.1.58) - [repository](https://github.com/rust-lang/cmake-rs)
-- **find-msvc-tools** (v0.1.12) - [repository](https://github.com/rust-lang/cc-rs)
+- **find-msvc-tools** (v0.1.14) - [repository](https://github.com/rust-lang/cc-rs)
 - **jobserver** (v0.1.35) - [repository](https://github.com/rust-lang/jobserver-rs)
 - **pkg-config** (v0.3.34) - [repository](https://github.com/rust-lang/pkg-config-rs)
 - **socket2** (v0.6.5) - [repository](https://github.com/rust-lang/socket2)
@@ -703,7 +664,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **mio** (v1.2.3) - [repository](https://github.com/tokio-rs/mio)
+- **mio** (v1.2.4) - [repository](https://github.com/tokio-rs/mio)
 
 ### License text
 
@@ -885,7 +846,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **hyper** (v1.11.1) - [repository](https://github.com/hyperium/hyper)
+- **hyper** (v1.12.0) - [repository](https://github.com/hyperium/hyper)
 
 ### License text
 
@@ -991,7 +952,6 @@ THE SOFTWARE.
 
 ### Used by
 
-- **futures-channel** (v0.3.34) - [repository](https://github.com/rust-lang/futures-rs)
 - **futures-core** (v0.3.34) - [repository](https://github.com/rust-lang/futures-rs)
 - **futures-task** (v0.3.34) - [repository](https://github.com/rust-lang/futures-rs)
 - **futures-util** (v0.3.34) - [repository](https://github.com/rust-lang/futures-rs)
@@ -1418,7 +1378,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **tokio-rustls** (v0.26.5) - [repository](https://github.com/rustls/tokio-rustls)
+- **tokio-rustls** (v0.26.6) - [repository](https://github.com/rustls/tokio-rustls)
 
 ### License text
 
@@ -1496,7 +1456,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **smallvec** (v1.16.1) - [repository](https://github.com/servo/rust-smallvec)
+- **smallvec** (v1.16.3) - [repository](https://github.com/servo/rust-smallvec)
 
 ### License text
 
@@ -1693,7 +1653,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **zeroize** (v1.9.0) - [repository](https://github.com/RustCrypto/utils)
+- **zeroize** (v1.9.1) - [repository](https://github.com/RustCrypto/utils)
 
 ### License text
 
@@ -2343,7 +2303,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **powerfmt** (v0.2.0) - [repository](https://github.com/jhpratt/powerfmt)
+- **powerfmt** (v0.2.1) - [repository](https://github.com/jhpratt/powerfmt)
 
 ### License text
 
@@ -2376,7 +2336,7 @@ SOFTWARE.
 
 ### Used by
 
-- **hyper-util** (v0.1.20) - [repository](https://github.com/hyperium/hyper-util)
+- **hyper-util** (v0.1.21) - [repository](https://github.com/hyperium/hyper-util)
 
 ### License text
 
@@ -2448,7 +2408,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **deranged** (v0.5.8) - [repository](https://github.com/jhpratt/deranged)
+- **deranged** (v0.5.9) - [repository](https://github.com/jhpratt/deranged)
 
 ### License text
 
@@ -2593,7 +2553,7 @@ SOFTWARE.
 
 ### Used by
 
-- **libc** (v0.2.189) - [repository](https://github.com/rust-lang/libc)
+- **libc** (v0.2.190) - [repository](https://github.com/rust-lang/libc)
 
 ### License text
 
@@ -2632,7 +2592,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **rand** (v0.10.2) - [repository](https://github.com/rust-random/rand)
+- **rand** (v0.10.3) - [repository](https://github.com/rust-random/rand)
 
 ### License text
 
@@ -2925,7 +2885,7 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **tokio** (v1.53.1) - [repository](https://github.com/tokio-rs/tokio)
+- **tokio** (v1.53.2) - [repository](https://github.com/tokio-rs/tokio)
 
 ### License text
 
@@ -2963,6 +2923,7 @@ SOFTWARE.
 - **anyhow** (v1.0.104) - [repository](https://github.com/dtolnay/anyhow)
 - **atomic-waker** (v1.1.2) - [repository](https://github.com/smol-rs/atomic-waker)
 - **itoa** (v1.0.18) - [repository](https://github.com/dtolnay/itoa)
+- **lazy_static** (v1.5.1) - [repository](https://github.com/rust-lang-nursery/lazy-static.rs)
 - **once_cell** (v1.21.4) - [repository](https://github.com/matklad/once_cell)
 - **pin-project-lite** (v0.2.17) - [repository](https://github.com/taiki-e/pin-project-lite)
 - **proc-macro2** (v1.0.107) - [repository](https://github.com/dtolnay/proc-macro2)
@@ -2970,15 +2931,15 @@ SOFTWARE.
 - **serde** (v1.0.229) - [repository](https://github.com/serde-rs/serde)
 - **serde_core** (v1.0.229) - [repository](https://github.com/serde-rs/serde)
 - **serde_derive** (v1.0.229) - [repository](https://github.com/serde-rs/serde)
-- **serde_json** (v1.0.151) - [repository](https://github.com/serde-rs/json)
+- **serde_json** (v1.0.154) - [repository](https://github.com/serde-rs/json)
 - **serde_path_to_error** (v0.1.20) - [repository](https://github.com/dtolnay/path-to-error)
 - **syn** (v2.0.119) - [repository](https://github.com/dtolnay/syn)
-- **syn** (v3.0.6) - [repository](https://github.com/dtolnay/syn)
+- **syn** (v3.0.9) - [repository](https://github.com/dtolnay/syn)
 - **thiserror-impl** (v1.0.69) - [repository](https://github.com/dtolnay/thiserror)
-- **thiserror-impl** (v2.0.20) - [repository](https://github.com/dtolnay/thiserror)
+- **thiserror-impl** (v2.0.21) - [repository](https://github.com/dtolnay/thiserror)
 - **thiserror** (v1.0.69) - [repository](https://github.com/dtolnay/thiserror)
-- **thiserror** (v2.0.20) - [repository](https://github.com/dtolnay/thiserror)
-- **unicode-ident** (v1.0.26) - [repository](https://github.com/dtolnay/unicode-ident)
+- **thiserror** (v2.0.21) - [repository](https://github.com/dtolnay/thiserror)
+- **unicode-ident** (v1.0.27) - [repository](https://github.com/dtolnay/unicode-ident)
 - **wasi** (v0.11.1+wasi-snapshot-preview1) - [repository](https://github.com/bytecodealliance/wasi)
 - **zmij** (v1.0.23) - [repository](https://github.com/dtolnay/zmij)
 
@@ -3159,7 +3120,7 @@ THE SOFTWARE.
 
 ### Used by
 
-- **aws-lc-sys** (v0.45.0) - [repository](https://github.com/aws/aws-lc-rs)
+- **aws-lc-sys** (v0.46.0) - [repository](https://github.com/aws/aws-lc-rs)
 
 ### License text
 
@@ -3273,7 +3234,7 @@ SOFTWARE.
 
 ### Used by
 
-- **unicode-ident** (v1.0.26) - [repository](https://github.com/dtolnay/unicode-ident)
+- **unicode-ident** (v1.0.27) - [repository](https://github.com/dtolnay/unicode-ident)
 
 ### License text
 
