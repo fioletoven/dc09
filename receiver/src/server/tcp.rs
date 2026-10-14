@@ -93,6 +93,8 @@ async fn process_connection<S>(
     log::debug!("accepted new connection from {addr}");
     increase_active_connections();
 
+    let ignore_tls_close_notify = config.is_tls_enabled() && !config.strict_tls_shutdown;
+
     let mut buffer = [0; 2048];
     loop {
         match socket.read(&mut buffer).await {
@@ -129,8 +131,12 @@ async fn process_connection<S>(
                     break;
                 },
             },
-            Err(e) => {
-                log::error!("failed to read from socket: {e}");
+            Err(error) if ignore_tls_close_notify && error.kind() == std::io::ErrorKind::UnexpectedEof => {
+                log::debug!("TLS connection closed by {addr} without close_notify");
+                break;
+            },
+            Err(error) => {
+                log::error!("failed to read from socket: {error}");
                 break;
             },
         }

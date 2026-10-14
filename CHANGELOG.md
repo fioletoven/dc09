@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.2.3 - 2026-10-14
+
+### Features
+
+- disable by default strict TLS shutdown checks (close_notify)
+
 ## 0.2.2 - 2026-09-20
 
 ### Features

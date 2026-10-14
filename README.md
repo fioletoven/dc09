@@ -97,18 +97,19 @@ The DC-09 Receiver Simulator is a command-line test server that handles DC-09 di
 
 #### Command-Line Arguments
 
-| Argument          | Description                                                                 | Default       | Example                                    |
-|:------------------|:----------------------------------------------------------------------------|:--------------|:-------------------------------------------|
-| _[ADDRESS]_       | IP address to listen on                                                     | 127.0.0.1     | 192.168.1.100                              |
-| `--port`, `-p`    | Port number to listen on (DC-09 traffic)                                    | 8080          | `--port 5140`                              |
-| `--key`, `-k`     | Default decryption key (16, 24 or 32 bytes)                                 | None          | `--key "my16bytekey1234567890abcdef"`      |
-| `--metrics`, `-m` | Port number for metrics server (Prometheus metrics)                         | 9090          | `--metrics 5000`                           |
-| `--nak`           | Always send `NAK` instead of `ACK`                                          | false         | `--nak`                                    |
-| `--duh`           | Always send `DUH` instead of `ACK`                                          | false         | `--duh`                                    |
-| `--show`          | Display received messages: `target`, `plain` or `both`                      | `target`      | `--show both`                              |
-| `--scenarios`     | JSON file with per-account keys and settings                                | None          | `--scenarios examples/scenarios.json`      |
-| `--tls-cert`      | PEM certificate chain presented by the TCP server                           | None          | `--tls-cert ./certs/server.pem`            |
-| `--tls-key`       | PEM private key for the TCP server certificate                              | None          | `--tls-key ./certs/server.key`             |
+| Argument                | Description                                                   | Default Value | Example                               |
+|:------------------------|:--------------------------------------------------------------|:--------------|:--------------------------------------|
+| _[ADDRESS]_             | IP address to listen on                                       | 127.0.0.1     | 192.168.1.100                         |
+| `--port`, `-p`          | Port number to listen on (DC-09 traffic)                      | 8080          | `--port 5140`                         |
+| `--key`, `-k`           | Default decryption key (16, 24 or 32 bytes)                   | None          | `--key "my16bytekey1234567890abcdef"` |
+| `--metrics`, `-m`       | Port number for metrics server (Prometheus metrics)           | 9090          | `--metrics 5000`                      |
+| `--nak`                 | Always send `NAK` instead of `ACK`                            | false         | `--nak`                               |
+| `--duh`                 | Always send `DUH` instead of `ACK`                            | false         | `--duh`                               |
+| `--show`                | Display received messages: `target`, `plain` or `both`        | `target`      | `--show both`                         |
+| `--scenarios`           | JSON file with per-account keys and settings                  | None          | `--scenarios examples/scenarios.json` |
+| `--tls-cert`            | PEM certificate chain presented by the TCP server             | None          | `--tls-cert ./certs/server.pem`       |
+| `--tls-key`             | PEM private key for the TCP server certificate                | None          | `--tls-key ./certs/server.key`        |
+| `--strict-tls-shutdown` | Treat TLS connections closed without close_notify as an error | false         | `--strict-tls-shutdown`               |
 
 **Note:** `--nak` and `--duh` are mutually exclusive. If neither is set, the default is `ACK`. The HTTP API can override this behaviour at runtime.
 **Note:** `--tls-cert` and `--tls-key` enable TLS for TCP only. UDP traffic continues to use plaintext.

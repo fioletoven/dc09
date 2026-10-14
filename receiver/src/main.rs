@@ -64,7 +64,7 @@ fn create_server_config(args: &cli::Args, is_tcp: bool) -> Result<ServerConfig> 
     }
 
     match args.tls_files() {
-        Some((cert_path, key_path)) => config.with_tls(cert_path, key_path),
+        Some((cert_path, key_path)) => config.with_tls(cert_path, key_path, args.strict_tls_shutdown),
         None => Ok(config),
     }
 }

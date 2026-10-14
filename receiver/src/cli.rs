@@ -31,11 +31,11 @@ pub struct Args {
     #[arg(long, value_enum, value_name = "MODE", default_value = "target")]
     pub show: DisplayMode,
 
-    /// Send `NAK` instead of `ACK` for received messages.
+    /// Send NAK instead of ACK for received messages.
     #[arg(long, conflicts_with = "duh")]
     pub nak: bool,
 
-    /// Send `DUH` instead of `ACK` for received messages.
+    /// Send DUH instead of ACK for received messages.
     #[arg(long, conflicts_with = "nak")]
     pub duh: bool,
 
@@ -50,6 +50,10 @@ pub struct Args {
     /// PEM private key used by the TCP server.
     #[arg(long, value_name = "FILE", requires = "tls_cert")]
     pub tls_key: Option<PathBuf>,
+
+    /// Treat TLS connections closed without close_notify as an error.
+    #[arg(long, requires = "tls_cert", requires = "tls_key")]
+    pub strict_tls_shutdown: bool,
 }
 
 impl Args {
