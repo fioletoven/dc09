@@ -111,8 +111,8 @@ The DC-09 Receiver Simulator is a command-line test server that handles DC-09 di
 | `--tls-key`             | PEM private key for the TCP server certificate                | None          | `--tls-key ./certs/server.key`        |
 | `--strict-tls-shutdown` | Treat TLS connections closed without close_notify as an error | false         | `--strict-tls-shutdown`               |
 
-**Note:** `--nak` and `--duh` are mutually exclusive. If neither is set, the default is `ACK`. The HTTP API can override this behaviour at runtime.
-**Note:** `--tls-cert` and `--tls-key` enable TLS for TCP only. UDP traffic continues to use plaintext.
+> `--nak` and `--duh` are mutually exclusive. If neither is set, the default is `ACK`. The HTTP API can override this behaviour at runtime.  
+> `--tls-cert` and `--tls-key` enable TLS for TCP only. UDP traffic continues to use plaintext.
 
 #### Example commands
 
