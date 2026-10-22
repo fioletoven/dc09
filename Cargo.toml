@@ -37,6 +37,7 @@ tracing-subscriber = { version = "0.3", features = [
     "time",
     "env-filter",
 ] }
+webpki-roots = { version = "1" }
 
 [profile.release]
 codegen-units = 1 # Reduce number of codegen units to increase optimizations

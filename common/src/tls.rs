@@ -32,7 +32,11 @@ pub enum TlsConfigError {
 }
 
 /// Builds a TLS connector with optional certificate verification.
-pub fn build_tls_connector(cert_path: Option<&Path>, insecure: bool) -> Result<Option<TlsConnector>, TlsConfigError> {
+pub fn build_tls_connector(
+    cert_path: Option<&Path>,
+    insecure: bool,
+    force_tls: bool,
+) -> Result<Option<TlsConnector>, TlsConfigError> {
     if insecure {
         let config = ClientConfig::builder()
             .dangerous()
@@ -41,12 +45,16 @@ pub fn build_tls_connector(cert_path: Option<&Path>, insecure: bool) -> Result<O
         Ok(Some(TlsConnector::from(Arc::new(config))))
     } else if let Some(cert_path) = cert_path {
         let certs = load_cert_chain(cert_path)?;
-        let mut roots = RootCertStore::empty();
+        let mut roots = RootCertStore::from_iter(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
         if roots.add_parsable_certificates(certs).0 == 0 {
             return Err(TlsConfigError::EmptyCertificateChain {
                 path: cert_path.to_path_buf(),
             });
         }
+        let config = ClientConfig::builder().with_root_certificates(roots).with_no_client_auth();
+        Ok(Some(TlsConnector::from(Arc::new(config))))
+    } else if force_tls {
+        let roots = RootCertStore::from_iter(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
         let config = ClientConfig::builder().with_root_certificates(roots).with_no_client_auth();
         Ok(Some(TlsConnector::from(Arc::new(config))))
     } else {

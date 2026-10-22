@@ -1,5 +1,12 @@
 # Change Log
 
+## WIP
+
+### Bug Fixes
+
+- allow to enable TLS in dialler without specifying PEM certificate or insecure flag
+- update rustls-webpki to reject distrusted eMudhra intermediate CA certificates
+
 ## 0.2.3 - 2026-10-14
 
 ### Features
