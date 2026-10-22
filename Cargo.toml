@@ -3,7 +3,7 @@ resolver = "3"
 members = ["common", "dialler", "receiver"]
 
 [workspace.package]
-version = "0.2.3"
+version = "0.2.4"
 edition = "2024"
 rust-version = "1.95"
 license = "MIT"
@@ -37,6 +37,7 @@ tracing-subscriber = { version = "0.3", features = [
     "time",
     "env-filter",
 ] }
+webpki-roots = { version = "1" }
 
 [profile.release]
 codegen-units = 1 # Reduce number of codegen units to increase optimizations

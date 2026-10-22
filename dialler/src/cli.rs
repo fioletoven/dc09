@@ -63,6 +63,10 @@ pub struct Args {
     #[arg(long, short, conflicts_with_all = ["tls_cert", "insecure"])]
     pub udp: bool,
 
+    /// Use TLS for the TCP connection.
+    #[arg(long, conflicts_with = "udp")]
+    pub tls: bool,
+
     /// PEM certificate chain used to verify the receiver for a TLS TCP connection.
     #[arg(long, value_name = "FILE", conflicts_with_all = ["udp", "insecure"])]
     pub tls_cert: Option<PathBuf>,

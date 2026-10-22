@@ -38,6 +38,7 @@ The application uses the following arguments, configurable via the command line:
 | `--repeat`, `-c`   | Number of times to repeat the message per dialler             | 1             | --repeat 5                          |
 | `--key`, `-k`      | Encryption key for DC09 messages (16, 24, or 32 bytes)        | `None`        | --key "my16bytekey1234567890abcdef" |
 | `--udp`, `-u`      | UDP connection instead of TCP                                 | false         | --udp                               |
+| `--tls`            | Use TLS for the TCP connection                                | `None`        | --tls                               |
 | `--tls-cert`       | PEM certificate chain used to verify the receiver (TLS)       | `None`        | --tls-cert ./certs/server.pem       |
 | `--insecure`       | Accept any receiver certificate without verification (TLS)    | false         | --insecure                          |
 | `--show`           | Display mode for sent messages (target, plain or both)        | target        | --show both                         |
@@ -111,8 +112,8 @@ The DC-09 Receiver Simulator is a command-line test server that handles DC-09 di
 | `--tls-key`             | PEM private key for the TCP server certificate                | None          | `--tls-key ./certs/server.key`        |
 | `--strict-tls-shutdown` | Treat TLS connections closed without close_notify as an error | false         | `--strict-tls-shutdown`               |
 
-**Note:** `--nak` and `--duh` are mutually exclusive. If neither is set, the default is `ACK`. The HTTP API can override this behaviour at runtime.
-**Note:** `--tls-cert` and `--tls-key` enable TLS for TCP only. UDP traffic continues to use plaintext.
+> `--nak` and `--duh` are mutually exclusive. If neither is set, the default is `ACK`. The HTTP API can override this behaviour at runtime.  
+> `--tls-cert` and `--tls-key` enable TLS for TCP only. UDP traffic continues to use plaintext.
 
 #### Example commands
 
