@@ -2,7 +2,7 @@ use anyhow::Result;
 use common::dc09::parse_dc09_account_name;
 use common::logging::DisplayMode;
 use common::scenarios::DiallerConfig;
-use common::tls::build_tls_acceptor;
+use common::tls::{ClientAuth, build_tls_acceptor};
 use common::utils::{SharedKeysMap, get_account_name};
 use std::collections::HashMap;
 use std::fmt::Display;
@@ -52,8 +52,14 @@ impl ServerConfig {
     }
 
     /// Enables TLS for TCP listeners using the provided certificate and private key.
-    pub fn with_tls(mut self, cert_path: &Path, key_path: &Path, strict_shutdown: bool) -> Result<Self> {
-        self.tls_acceptor = Some(build_tls_acceptor(cert_path, key_path)?);
+    pub fn with_tls(
+        mut self,
+        cert_path: &Path,
+        key_path: &Path,
+        client_auth: &ClientAuth,
+        strict_shutdown: bool,
+    ) -> Result<Self> {
+        self.tls_acceptor = Some(build_tls_acceptor(cert_path, key_path, client_auth)?);
         self.strict_tls_shutdown = strict_shutdown;
         Ok(self)
     }

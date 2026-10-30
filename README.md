@@ -14,7 +14,7 @@ The DC-09 Dialler Simulator is a command-line application designed to send DC-09
 - Configure message content, account number, and ID token.
 - Support for message repetition and sequence number customization.
 - Optional encryption with a user-provided key (16, 24, or 32 bytes).
-- Optional TLS for TCP connections (server-side).
+- Optional TLS or mTLS for TCP connections.
 - Support for scenario files.
 
 ### Usage
@@ -40,6 +40,8 @@ The application uses the following arguments, configurable via the command line:
 | `--udp`, `-u`      | UDP connection instead of TCP                                 | false         | --udp                               |
 | `--tls`            | Use TLS for the TCP connection                                | `None`        | --tls                               |
 | `--tls-cert`       | PEM certificate chain used to verify the receiver (TLS)       | `None`        | --tls-cert ./certs/server.pem       |
+| `--tls-client-cert`| PEM client certificate chain presented to the receiver (mTLS) | `None`        | --tls-client-cert ./certs/client.pem|
+| `--tls-client-key` | PEM private key for the client certificate (mTLS)             | `None`        | --tls-client-key ./certs/client.key |
 | `--insecure`       | Accept any receiver certificate without verification (TLS)    | false         | --insecure                          |
 | `--show`           | Display mode for sent messages (target, plain or both)        | target        | --show both                         |
 | `--scenarios`      | Configuration file specifying defined scenarios for the run   | `None`        | --scenarios examples/scenarios.json |
@@ -77,6 +79,12 @@ Send to a TLS-enabled receiver without certificate verification:
 ./dialler 192.168.1.100 --port 5140 --insecure
 ```
 
+Send to a receiver requiring mutual TLS, presenting a client certificate:
+
+```sh
+./dialler 127.0.0.1 --port 5140 --tls-cert ./certs/ca.pem --tls-client-cert ./certs/client.pem --tls-client-key ./certs/client.key
+```
+
 ## Receiver simulator
 
 ### Overview
@@ -86,7 +94,7 @@ The DC-09 Receiver Simulator is a command-line test server that handles DC-09 di
 ### Features
 
 - Listens for DC-09 connections over TCP and UDP
-- Optional server-side TLS for TCP listeners using a PEM certificate and private key
+- Optional TLS or mTLS for TCP listeners using a PEM certificate and private key
 - Optional AES encryption/decryption with user-provided key (16, 24, or 32 bytes)
 - Per-account key support via scenario configuration file
 - Configurable static response mode: always `ACK`, `NAK` or `DUH`
@@ -110,29 +118,39 @@ The DC-09 Receiver Simulator is a command-line test server that handles DC-09 di
 | `--scenarios`           | JSON file with per-account keys and settings                  | None          | `--scenarios examples/scenarios.json` |
 | `--tls-cert`            | PEM certificate chain presented by the TCP server             | None          | `--tls-cert ./certs/server.pem`       |
 | `--tls-key`             | PEM private key for the TCP server certificate                | None          | `--tls-key ./certs/server.key`        |
+| `--mtls`                | Require client certificates signed by default webpki roots    | false         | `--mtls`                              |
+| `--mtls-ca`             | Require client certificates signed by a CA from the PEM file  | None          | `--mtls-ca ./certs/ca.pem`            |
+| `--insecure`            | Require client certificates, but accept any without checks    | false         | `--insecure`                          |
 | `--strict-tls-shutdown` | Treat TLS connections closed without close_notify as an error | false         | `--strict-tls-shutdown`               |
 
 > `--nak` and `--duh` are mutually exclusive. If neither is set, the default is `ACK`. The HTTP API can override this behaviour at runtime.  
-> `--tls-cert` and `--tls-key` enable TLS for TCP only. UDP traffic continues to use plaintext.
+> `--tls-cert` and `--tls-key` enable TLS for TCP only. UDP traffic continues to use plaintext.  
+> `--mtls`, `--mtls-ca` and `--insecure` enable mutual TLS and require `--tls-cert`/`--tls-key`.
 
 #### Example commands
 
 Basic encrypted receiver that always NAKs:
 
-```bash
+```sh
 ./receiver 192.168.1.100 --port 5140 --key "my16bytekey1234567890abcdef" --nak
 ```
 
 Run with per-account keys and show encrypted and decrypted DC-09 messages:
 
-```bash
+```sh
 ./receiver --port 5140 --scenarios ./test-accounts.json --show both
 ```
 
 Run the TCP listener with server-side TLS:
 
-```bash
+```sh
 ./receiver --port 5140 --tls-cert ./certs/server.pem --tls-key ./certs/server.key
+```
+
+Run the TCP listener with mutual TLS, accepting only clients with certificates signed by the given CA:
+
+```sh
+./receiver --port 5140 --tls-cert ./certs/server.pem --tls-key ./certs/server.key --mtls-ca ./certs/ca.pem
 ```
 
 ### Prometheus Metrics

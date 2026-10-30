@@ -1,5 +1,11 @@
 # Change Log
 
+## WIP
+
+### Features
+
+- add support for mutual TLS in dialler and receiver
+
 ## 0.2.4 - 2026-10-22
 
 ### Bug Fixes
