@@ -29,11 +29,13 @@ impl Server for TcpServer {
     /// Creates new [`TcpServer`] instance.\
     /// **Note** that `key` can be provided to decrypt encrypted DC09 messages.
     async fn new(address: impl ToSocketAddrs, config: ServerConfig, state: AppState) -> Result<Self> {
+        if config.is_tls_enabled() {
+            let mode = if config.is_mtls_enabled() { "mTLS" } else { "TLS" };
+            log::info!("listener runs in {mode} mode");
+        }
+
         let listener = TcpListener::bind(address).await?;
         let tls_acceptor = config.tls_acceptor();
-        if tls_acceptor.is_some() {
-            log::info!("listener runs in TLS mode");
-        }
 
         Ok(Self {
             listener,

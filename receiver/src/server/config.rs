@@ -20,6 +20,7 @@ pub struct ServerConfig {
     pub mode: DisplayMode,
     pub strict_tls_shutdown: bool,
     tls_acceptor: Option<TlsAcceptor>,
+    is_mtls: bool,
 }
 
 impl ServerConfig {
@@ -42,6 +43,7 @@ impl ServerConfig {
             mode: DisplayMode::Target,
             strict_tls_shutdown: false,
             tls_acceptor: None,
+            is_mtls: false,
         }
     }
 
@@ -61,12 +63,19 @@ impl ServerConfig {
     ) -> Result<Self> {
         self.tls_acceptor = Some(build_tls_acceptor(cert_path, key_path, client_auth)?);
         self.strict_tls_shutdown = strict_shutdown;
+        self.is_mtls = *client_auth != ClientAuth::Disabled;
+
         Ok(self)
     }
 
     /// Returns `true` if this configuration has TLS enabled for TCP listener.
     pub fn is_tls_enabled(&self) -> bool {
         self.tls_acceptor.is_some()
+    }
+
+    /// Returns `true` if this configuration has mTLS enabled for TCP listener.
+    pub fn is_mtls_enabled(&self) -> bool {
+        self.is_mtls
     }
 
     /// Returns configured TLS acceptor for TCP listeners.

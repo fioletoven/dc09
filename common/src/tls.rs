@@ -41,7 +41,7 @@ pub enum TlsConfigError {
 }
 
 /// Client certificate verification mode used by the TLS server (mTLS).
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub enum ClientAuth {
     /// Clients are not asked for a certificate (plain server-side TLS).
     #[default]
