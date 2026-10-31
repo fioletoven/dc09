@@ -5,6 +5,11 @@
 ### Features
 
 - add support for mutual TLS in dialler and receiver
+- add `--fail-on-signal-error` switch to dialler
+
+### Bug Fixes
+
+- fix dialler to return proper exit code on errors
 
 ## 0.2.4 - 2026-10-22
 

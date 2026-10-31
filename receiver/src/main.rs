@@ -13,9 +13,10 @@ mod utils;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let args = cli::Args::parse();
+
     let _logging_guard = common::logging::initialize("receiver")?;
 
-    let args = cli::Args::parse();
     let state = AppState {
         tcp_ready: Arc::new(AtomicBool::new(false)),
         udp_ready: Arc::new(AtomicBool::new(false)),

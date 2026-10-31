@@ -94,6 +94,10 @@ pub struct Args {
     /// Timeout for waiting for a response, in seconds.
     #[arg(long, default_value_t = 1)]
     pub timeout: u16,
+
+    /// Return a non-zero exit code if any signal failed to send.
+    #[arg(long)]
+    pub fail_on_signal_error: bool,
 }
 
 impl Args {

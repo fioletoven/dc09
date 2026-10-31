@@ -1,5 +1,7 @@
 use anyhow::Result;
 use common::{dc09::DC09Message, logging::DisplayMode, scenarios::SignalConfig, time::OffsetDateTime, utils::SharedKeysMap};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::{collections::VecDeque, net::IpAddr, time::Duration};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::net::{TcpStream, UdpSocket};
@@ -23,6 +25,15 @@ pub struct Dialler {
     queue: VecDeque<(u16, u16)>,
     timeout: Option<Duration>,
     mode: DisplayMode,
+    had_error: Arc<AtomicBool>,
+}
+
+/// Marks the dialler as having encountered an error and logs it.
+macro_rules! log_error {
+    ($self:expr, $($arg:tt)*) => {{
+        $self.mark_error();
+        log::error!($($arg)*);
+    }};
 }
 
 impl Dialler {
@@ -42,6 +53,7 @@ impl Dialler {
             queue: VecDeque::new(),
             timeout: None,
             mode: DisplayMode::Target,
+            had_error: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -109,10 +121,16 @@ impl Dialler {
         &mut self.queue
     }
 
+    /// Returns whether this dialler encountered any error while sending signals or processing acks.
+    pub fn had_error(&self) -> bool {
+        self.had_error.load(Ordering::Relaxed)
+    }
+
     /// Sends sequence of messages from the queue.\
     /// **Note** that it will stop draining the queue on error.
-    pub async fn run_sequence(&mut self) {
+    pub async fn run_sequence(&mut self) -> bool {
         log::info!("{}    start sending signals", self.account);
+
         'outer: while let Some(item) = self.queue.pop_front() {
             if let Some(signal) = self.signals.get(&item).cloned() {
                 let repeat = signal.repeat.max(1) - 1;
@@ -127,6 +145,8 @@ impl Dialler {
                 }
             }
         }
+
+        !self.had_error()
     }
 
     /// Sends DC09 message with specified ID token.
@@ -172,7 +192,7 @@ impl Dialler {
 
         let message = signal.message.map(|m| format!("#{}|{}", self.account, m)).unwrap_or_default();
         if let Err(error) = self.send_message(signal.token, message).await {
-            log::error!("{}    {}", self.account, error);
+            log_error!(self, "{}    {}", self.account, error);
             return false;
         }
 
@@ -202,15 +222,16 @@ impl Dialler {
         let mut buffer = [0; 1024];
         let read_future = async {
             match stream.read(&mut buffer).await {
-                Ok(0) => log::error!("{}    connection closed by receiver", self.account),
+                Ok(0) => log_error!(self, "{}    connection closed by receiver", self.account),
                 Ok(n) => self.process_ack_buffer(&buffer, n),
-                Err(e) => log::error!("{}    failed to read response: {}", self.account, e),
+                Err(e) => log_error!(self, "{}    failed to read response: {}", self.account, e),
             }
         };
 
         match timeout {
             Some(timeout) => {
                 if tokio::time::timeout(timeout, read_future).await.is_err() {
+                    self.mark_error();
                     log::warn!("{}    response timed out after {:?}", self.account, timeout);
                 }
             },
@@ -233,13 +254,14 @@ impl Dialler {
         let recv_future = async {
             match socket.recv(&mut buffer).await {
                 Ok(n) => self.process_ack_buffer(&buffer, n),
-                Err(e) => log::error!("{}    failed to read response: {}", self.account, e),
+                Err(e) => log_error!(self, "{}    failed to read response: {}", self.account, e),
             }
         };
 
         match timeout {
             Some(timeout) => {
                 if tokio::time::timeout(timeout, recv_future).await.is_err() {
+                    self.mark_error();
                     log::warn!("{}    response timed out after {:?}", self.account, timeout);
                 }
             },
@@ -252,7 +274,7 @@ impl Dialler {
     fn process_ack_buffer(&self, buffer: &[u8; 1024], n: usize) {
         match core::str::from_utf8(&buffer[..n]) {
             Ok(ack) => self.process_ack_message(ack),
-            Err(e) => log::error!("{}    received invalid UTF-8 sequence: {}", self.account, e),
+            Err(e) => log_error!(self, "{}    received invalid UTF-8 sequence: {}", self.account, e),
         }
     }
 
@@ -260,10 +282,14 @@ impl Dialler {
         match DC09Message::try_from(message, self.key()) {
             Ok(msg) => match msg.validate(&self.account, self.sequence) {
                 Ok(()) => log::info!("{} << {}", self.account, message.trim()),
-                Err(e) => log::error!("{} << ({}) {}", self.account, e, message.trim()),
+                Err(e) => log_error!(self, "{} << ({}) {}", self.account, e, message.trim()),
             },
-            Err(e) => log::error!("{} << ({}) {}", self.account, e, message.trim()),
+            Err(e) => log_error!(self, "{} << ({}) {}", self.account, e, message.trim()),
         }
+    }
+
+    fn mark_error(&self) {
+        self.had_error.store(true, Ordering::Relaxed);
     }
 }
 

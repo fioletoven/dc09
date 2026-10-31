@@ -23,29 +23,30 @@ The DC-09 Dialler Simulator is a command-line application designed to send DC-09
 
 The application uses the following arguments, configurable via the command line:
 
-| Argument           | Description                                                   | Default Value | Example                             |
-|:-------------------|:--------------------------------------------------------------|:--------------|:------------------------------------|
-| _\[ADDRESS\]_      | IP address of the receiver                                    | 127.0.0.1     | 192.168.1.100                       |
-| `--port`, `-p`     | Port number of the receiver                                   | 8080          | --port 5140                         |
-| `--token`, `-t`    | ID token for the DC09 message                                 | NULL          | --token ADM-CID                     |
-| `--message`, `-m`  | Message content to send                                       | `None`        | --message "NRR\|AStart of dialler"  |
-| `--account`, `-a`  | Dialler account number (automatically incremented if possible)| 1234          | --account 5678                      |
-| `--line`, `-l`     | Receiver line number (account prefix)                         | `None`        | --line L01                          |
-| `--receiver`, `-r` | Receiver number                                               | `None`        | --receiver R01                      |
-| `--fixed`, `-f`    | Ensure that the account number is fixed across all diallers   | false         | --fixed                             |
-| `--sequence`, `-s` | Message sequence start number                                 | 1             | --sequence 100                      |
-| `--diallers`, `-d` | Number of diallers to create                                  | 1             | --diallers 20                       |
-| `--repeat`, `-c`   | Number of times to repeat the message per dialler             | 1             | --repeat 5                          |
-| `--key`, `-k`      | Encryption key for DC09 messages (16, 24, or 32 bytes)        | `None`        | --key "my16bytekey1234567890abcdef" |
-| `--udp`, `-u`      | UDP connection instead of TCP                                 | false         | --udp                               |
-| `--tls`            | Use TLS for the TCP connection                                | `None`        | --tls                               |
-| `--tls-cert`       | PEM certificate chain used to verify the receiver (TLS)       | `None`        | --tls-cert ./certs/server.pem       |
-| `--tls-client-cert`| PEM client certificate chain presented to the receiver (mTLS) | `None`        | --tls-client-cert ./certs/client.pem|
-| `--tls-client-key` | PEM private key for the client certificate (mTLS)             | `None`        | --tls-client-key ./certs/client.key |
-| `--insecure`       | Accept any receiver certificate without verification (TLS)    | false         | --insecure                          |
-| `--show`           | Display mode for sent messages (target, plain or both)        | target        | --show both                         |
-| `--scenarios`      | Configuration file specifying defined scenarios for the run   | `None`        | --scenarios examples/scenarios.json |
-| `--timeout`        | Timeout for waiting for a response, in seconds                | 1             | --timeout 10                        |
+| Argument                 | Description                                                    | Default Value | Example                              |
+|:-------------------------|:---------------------------------------------------------------|:--------------|:-------------------------------------|
+| _\[ADDRESS\]_            | IP address of the receiver                                     | 127.0.0.1     | 192.168.1.100                        |
+| `--port`, `-p`           | Port number of the receiver                                    | 8080          | --port 5140                          |
+| `--token`, `-t`          | ID token for the DC09 message                                  | NULL          | --token ADM-CID                      |
+| `--message`, `-m`        | Message content to send                                        | `None`        | --message "NRR\|AStart of dialler"   |
+| `--account`, `-a`        | Dialler account number (automatically incremented if possible) | 1234          | --account 5678                       |
+| `--line`, `-l`           | Receiver line number (account prefix)                          | `None`        | --line L01                           |
+| `--receiver`, `-r`       | Receiver number                                                | `None`        | --receiver R01                       |
+| `--fixed`, `-f`          | Ensure that the account number is fixed across all diallers    | false         | --fixed                              |
+| `--sequence`, `-s`       | Message sequence start number                                  | 1             | --sequence 100                       |
+| `--diallers`, `-d`       | Number of diallers to create                                   | 1             | --diallers 20                        |
+| `--repeat`, `-c`         | Number of times to repeat the message per dialler              | 1             | --repeat 5                           |
+| `--key`, `-k`            | Encryption key for DC09 messages (16, 24, or 32 bytes)         | `None`        | --key "my16bytekey1234567890abcdef"  |
+| `--udp`, `-u`            | UDP connection instead of TCP                                  | false         | --udp                                |
+| `--tls`                  | Use TLS for the TCP connection                                 | false         | --tls                                |
+| `--tls-cert`             | PEM certificate chain used to verify the receiver (TLS)        | `None`        | --tls-cert ./certs/server.pem        |
+| `--tls-client-cert`      | PEM client certificate chain presented to the receiver (mTLS)  | `None`        | --tls-client-cert ./certs/client.pem |
+| `--tls-client-key`       | PEM private key for the client certificate (mTLS)              | `None`        | --tls-client-key ./certs/client.key  |
+| `--insecure`             | Accept any receiver certificate without verification (TLS)     | false         | --insecure                           |
+| `--show`                 | Display mode for sent messages (target, plain or both)         | target        | --show both                          |
+| `--scenarios`            | Configuration file specifying defined scenarios for the run    | `None`        | --scenarios examples/scenarios.json  |
+| `--timeout`              | Timeout for waiting for a response, in seconds                 | 1             | --timeout 10                         |
+| `--fail-on-signal-error` | Return a non-zero exit code if any signal failed to send       | false         | --fail-on-signal-error               |
 
 #### Example commands
 
