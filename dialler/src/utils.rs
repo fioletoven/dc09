@@ -11,7 +11,7 @@ use crate::dialler::Dialler;
 /// Creates all diallers from the scenarios file and command line parameters.
 pub fn create_diallers(args: &Args, signals: &SharedSignalsMap, keys: &SharedKeysMap) -> Result<Vec<Dialler>> {
     let mut result = Vec::new();
-    let tls = build_tls_connector(args.tls_cert.as_deref(), args.insecure, args.tls)?;
+    let tls = build_tls_connector(args.tls, args.tls_cert.as_deref(), args.tls_client_files(), args.insecure)?;
 
     if let Some(scenarios) = &args.scenarios {
         for (index, dialler) in scenarios.diallers.iter().enumerate() {

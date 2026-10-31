@@ -1,6 +1,7 @@
 use clap::Parser;
 use common::logging::DisplayMode;
 use common::scenarios::Scenarios;
+use common::tls::ClientAuth;
 use common::utils::{SharedKeysMap, parse_key, parse_scenarios_path};
 use std::net::IpAddr;
 use std::path::{Path, PathBuf};
@@ -51,6 +52,18 @@ pub struct Args {
     #[arg(long, value_name = "FILE", requires = "tls_cert")]
     pub tls_key: Option<PathBuf>,
 
+    /// Require TLS clients to present a certificate signed by one of the default webpki roots (mTLS).
+    #[arg(long, requires = "tls_cert")]
+    pub mtls: bool,
+
+    /// Require TLS clients to present a certificate signed by one from this PEM file (mTLS).
+    #[arg(long, value_name = "FILE", requires = "tls_cert", conflicts_with = "mtls_insecure")]
+    pub mtls_ca: Option<PathBuf>,
+
+    /// Require TLS clients to present a certificate, but accept any without verification (mTLS).
+    #[arg(long, requires = "tls_cert", conflicts_with = "mtls_ca")]
+    pub insecure: bool,
+
     /// Treat TLS connections closed without close_notify as an error.
     #[arg(long, requires = "tls_cert", requires = "tls_key")]
     pub strict_tls_shutdown: bool,
@@ -76,5 +89,18 @@ impl Args {
     /// Returns configured TLS certificate and key paths when TCP TLS is enabled.
     pub fn tls_files(&self) -> Option<(&Path, &Path)> {
         self.tls_cert.as_deref().zip(self.tls_key.as_deref())
+    }
+
+    /// Returns client certificate verification mode used for mTLS connections.
+    pub fn client_auth(&self) -> ClientAuth {
+        if self.insecure {
+            ClientAuth::Insecure
+        } else if let Some(ca_path) = &self.mtls_ca {
+            ClientAuth::Certificate(ca_path.clone())
+        } else if self.mtls {
+            ClientAuth::WebPkiRoots
+        } else {
+            ClientAuth::Disabled
+        }
     }
 }

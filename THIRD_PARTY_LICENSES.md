@@ -223,7 +223,7 @@ This project uses the following third-party dependencies:
 
 ### Used by
 
-- **aws-lc-sys** (v0.46.0) - [repository](https://github.com/aws/aws-lc-rs)
+- **aws-lc-sys** (v0.47.0) - [repository](https://github.com/aws/aws-lc-rs)
 - **dunce** (v1.0.5) - [repository](https://gitlab.com/kornelski/dunce)
 - **ryu** (v1.0.23) - [repository](https://github.com/dtolnay/ryu)
 - **sync_wrapper** (v1.0.2) - [repository](https://github.com/Actyx/sync_wrapper)
@@ -399,7 +399,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ### Used by
 
-- **aws-lc-sys** (v0.46.0) - [repository](https://github.com/aws/aws-lc-rs)
+- **aws-lc-sys** (v0.47.0) - [repository](https://github.com/aws/aws-lc-rs)
 
 ### License text
 
@@ -424,7 +424,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 ### Used by
 
-- **webpki-roots** (v1.0.10) - [repository](https://github.com/rustls/webpki-roots)
+- **webpki-roots** (v1.0.11) - [repository](https://github.com/rustls/webpki-roots)
 
 ### License text
 
@@ -559,8 +559,8 @@ third-party/chromium/LICENSE.
 
 ### Used by
 
-- **aws-lc-rs** (v1.18.2) - [repository](https://github.com/aws/aws-lc-rs)
-- **aws-lc-sys** (v0.46.0) - [repository](https://github.com/aws/aws-lc-rs)
+- **aws-lc-rs** (v1.19.0) - [repository](https://github.com/aws/aws-lc-rs)
+- **aws-lc-sys** (v0.47.0) - [repository](https://github.com/aws/aws-lc-rs)
 
 ### License text
 
@@ -694,7 +694,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **cc** (v1.9.0) - [repository](https://github.com/rust-lang/cc-rs)
+- **cc** (v1.10.0) - [repository](https://github.com/rust-lang/cc-rs)
 - **cfg-if** (v1.0.5) - [repository](https://github.com/rust-lang/cfg-if)
 - **cmake** (v0.1.58) - [repository](https://github.com/rust-lang/cmake-rs)
 - **find-msvc-tools** (v0.1.15) - [repository](https://github.com/rust-lang/cc-rs)
@@ -1531,7 +1531,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **smallvec** (v1.16.3) - [repository](https://github.com/servo/rust-smallvec)
+- **smallvec** (v1.16.4) - [repository](https://github.com/servo/rust-smallvec)
 
 ### License text
 
@@ -2923,9 +2923,9 @@ SOFTWARE.
 
 ### Used by
 
-- **common** (v0.2.4)
-- **dialler** (v0.2.4)
-- **receiver** (v0.2.4)
+- **common** (v0.2.5)
+- **dialler** (v0.2.5)
+- **receiver** (v0.2.5)
 - **r-efi** (v6.0.0) - [repository](https://github.com/r-efi/r-efi)
 - **windows-link** (v0.2.1) - [repository](https://github.com/microsoft/windows-rs)
 - **windows-sys** (v0.61.2) - [repository](https://github.com/microsoft/windows-rs)
@@ -2960,7 +2960,7 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **tokio** (v1.54.0) - [repository](https://github.com/tokio-rs/tokio)
+- **tokio** (v1.54.1) - [repository](https://github.com/tokio-rs/tokio)
 
 ### License text
 
@@ -3195,7 +3195,7 @@ THE SOFTWARE.
 
 ### Used by
 
-- **aws-lc-sys** (v0.46.0) - [repository](https://github.com/aws/aws-lc-rs)
+- **aws-lc-sys** (v0.47.0) - [repository](https://github.com/aws/aws-lc-rs)
 
 ### License text
 

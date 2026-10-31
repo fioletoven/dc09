@@ -1,5 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
+use std::process::ExitCode;
 
 use crate::utils::{create_diallers, setup_message_queues};
 
@@ -8,32 +9,48 @@ mod dialler;
 mod utils;
 
 #[tokio::main]
-async fn main() -> Result<()> {
-    let _logging_guard = common::logging::initialize("dialler")?;
-
+async fn main() -> ExitCode {
     let args = cli::Args::parse();
 
-    if let Err(error) = run_diallers(args).await {
-        log::error!("{error}");
-    }
+    let _logging_guard = match common::logging::initialize("dialler") {
+        Ok(guard) => guard,
+        Err(error) => {
+            eprintln!("failed to initialize logging: {error}");
+            return ExitCode::FAILURE;
+        },
+    };
 
-    Ok(())
+    match run_diallers(&args).await {
+        Ok(had_signal_error) => {
+            if args.fail_on_signal_error && had_signal_error {
+                ExitCode::FAILURE
+            } else {
+                ExitCode::SUCCESS
+            }
+        },
+        Err(error) => {
+            log::error!("{error}");
+            ExitCode::FAILURE
+        },
+    }
 }
 
-async fn run_diallers(args: cli::Args) -> Result<()> {
+async fn run_diallers(args: &cli::Args) -> Result<bool> {
     let keys = args.build_keys_map();
     let signals = args.build_signals_map();
-    let mut diallers = create_diallers(&args, &signals, &keys)?;
-    setup_message_queues(&mut diallers, &args);
+    let mut diallers = create_diallers(args, &signals, &keys)?;
+    setup_message_queues(&mut diallers, args);
 
     let mut tasks = Vec::new();
     for mut dialler in diallers {
         tasks.push(tokio::spawn(async move { dialler.run_sequence().await }));
     }
 
+    let mut had_signal_error = false;
     for task in tasks {
-        task.await?;
+        let success = task.await?;
+        had_signal_error |= !success;
     }
 
-    Ok(())
+    Ok(had_signal_error)
 }

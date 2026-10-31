@@ -2,7 +2,7 @@ use clap::Parser;
 use common::logging::DisplayMode;
 use common::scenarios::{Scenarios, SignalConfig};
 use common::utils::{SharedKeysMap, parse_account_prefix, parse_key, parse_receiver, parse_scenarios_path};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::{collections::HashMap, net::IpAddr, sync::Arc};
 
 pub type SharedSignalsMap = Arc<HashMap<(u16, u16), SignalConfig>>;
@@ -60,7 +60,7 @@ pub struct Args {
     pub key: Option<String>,
 
     /// UDP connection instead of TCP.
-    #[arg(long, short, conflicts_with_all = ["tls_cert", "insecure"])]
+    #[arg(long, short, conflicts_with_all = ["tls_cert", "tls_client_cert", "tls_client_key", "insecure"])]
     pub udp: bool,
 
     /// Use TLS for the TCP connection.
@@ -70,6 +70,14 @@ pub struct Args {
     /// PEM certificate chain used to verify the receiver for a TLS TCP connection.
     #[arg(long, value_name = "FILE", conflicts_with_all = ["udp", "insecure"])]
     pub tls_cert: Option<PathBuf>,
+
+    /// PEM client certificate chain presented to the receiver (mTLS).
+    #[arg(long, value_name = "FILE", requires = "tls_client_key", conflicts_with = "udp")]
+    pub tls_client_cert: Option<PathBuf>,
+
+    /// PEM private key for the client certificate (mTLS).
+    #[arg(long, value_name = "FILE", requires = "tls_client_cert", conflicts_with = "udp")]
+    pub tls_client_key: Option<PathBuf>,
 
     /// Accept any receiver certificate without verification for a TLS TCP connection.
     #[arg(long, conflicts_with_all = ["udp", "tls_cert"])]
@@ -86,6 +94,10 @@ pub struct Args {
     /// Timeout for waiting for a response, in seconds.
     #[arg(long, default_value_t = 1)]
     pub timeout: u16,
+
+    /// Return a non-zero exit code if any signal failed to send.
+    #[arg(long)]
+    pub fail_on_signal_error: bool,
 }
 
 impl Args {
@@ -111,5 +123,10 @@ impl Args {
         }
 
         Arc::new(result)
+    }
+
+    /// Returns configured client certificate and key paths when mutual TLS is enabled.
+    pub fn tls_client_files(&self) -> Option<(&Path, &Path)> {
+        self.tls_client_cert.as_deref().zip(self.tls_client_key.as_deref())
     }
 }
