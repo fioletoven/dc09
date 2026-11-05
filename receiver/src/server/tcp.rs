@@ -1,5 +1,5 @@
 use anyhow::Result;
-use common::dc09::DC09Message;
+use common::dc09::{DC09Error, DC09Message, FrameBuffer};
 use std::sync::atomic::Ordering;
 use std::{net::SocketAddr, sync::Arc};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
@@ -98,9 +98,14 @@ async fn process_connection<S>(
     let ignore_tls_close_notify = config.is_tls_enabled() && !config.strict_tls_shutdown;
 
     let mut buffer = [0; 2048];
+    let mut frames = FrameBuffer::new();
     loop {
         match socket.read(&mut buffer).await {
             Ok(0) => {
+                if frames.has_pending() {
+                    log::warn!("connection closed by {addr} with an incomplete frame pending");
+                }
+
                 match socket.shutdown().await {
                     Ok(()) => log::debug!("connection closed by {addr}"),
                     Err(e) => log::warn!("error while socket shutdown: {e}"),
@@ -109,29 +114,12 @@ async fn process_connection<S>(
                 decrease_active_connections();
                 return;
             },
-            Ok(n) => match str::from_utf8(&buffer[..n]) {
-                Ok(msg) => {
-                    let outcome = process_message(&mut socket, &addr, msg, &config, mode.message(), mode.heartbeat()).await;
+            Ok(n) => {
+                frames.extend(&buffer[..n]);
 
-                    if recorder.is_recording() {
-                        recorder.send_entry(RecordedEntry::new(
-                            Transport::Tcp,
-                            addr,
-                            outcome.is_valid,
-                            outcome.is_heartbeat,
-                            msg.trim().to_owned(),
-                            outcome.response,
-                        ));
-                    }
-
-                    if !outcome.is_valid {
-                        break;
-                    }
-                },
-                Err(err) => {
-                    log::error!("received invalid UTF-8 sequence: {err}");
+                if !process_frames(&mut socket, &addr, &mut frames, &config, &mode, &recorder).await {
                     break;
-                },
+                }
             },
             Err(error) if ignore_tls_close_notify && error.kind() == std::io::ErrorKind::UnexpectedEof => {
                 log::debug!("TLS connection closed by {addr} without close_notify");
@@ -148,6 +136,61 @@ async fn process_connection<S>(
     match socket.shutdown().await {
         Ok(()) => log::debug!("connection closed for {addr}"),
         Err(e) => log::warn!("error while socket shutdown: {e}"),
+    }
+}
+
+/// Processes all complete DC09 frames received so far.\
+/// Returns `false` when the connection should be closed.
+async fn process_frames<S>(
+    socket: &mut S,
+    addr: &SocketAddr,
+    frames: &mut FrameBuffer,
+    config: &ServerConfig,
+    mode: &ResponseModes,
+    recorder: &RecorderHandle,
+) -> bool
+where
+    S: AsyncWrite + Unpin,
+{
+    loop {
+        let frame = match frames.next_frame() {
+            Ok(Some(frame)) => frame,
+            Ok(None) => return true,
+            Err(err) => {
+                let raw = String::from_utf8_lossy(&frames.take_pending()).into_owned();
+                log::error!("{} -> {}: {}", addr, err, raw.trim());
+                process_error(addr, recorder, &raw, &DC09Error::from(err));
+
+                return false;
+            },
+        };
+
+        let msg = match str::from_utf8(&frame) {
+            Ok(msg) => msg,
+            Err(err) => {
+                log::error!("received invalid UTF-8 sequence: {err}");
+                process_error(addr, recorder, &String::from_utf8_lossy(&frame), &DC09Error::from(err));
+
+                return false;
+            },
+        };
+
+        let outcome = process_message(socket, addr, msg, config, mode.message(), mode.heartbeat()).await;
+
+        if recorder.is_recording() {
+            recorder.send_entry(RecordedEntry::new(
+                Transport::Tcp,
+                *addr,
+                outcome.is_valid,
+                outcome.is_heartbeat,
+                msg.trim().to_owned(),
+                outcome.response,
+            ));
+        }
+
+        if !outcome.is_valid {
+            return false;
+        }
     }
 }
 
@@ -198,5 +241,20 @@ where
                 response: None,
             }
         },
+    }
+}
+
+fn process_error(addr: &SocketAddr, recorder: &RecorderHandle, message: &str, err: &DC09Error) {
+    process_invalid_message_metrics(TRANSPORT_NAME, message, err);
+
+    if recorder.is_recording() {
+        recorder.send_entry(RecordedEntry::new(
+            Transport::Tcp,
+            *addr,
+            false,
+            false,
+            message.trim().to_owned(),
+            None,
+        ));
     }
 }

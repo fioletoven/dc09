@@ -14,6 +14,10 @@ use super::{DC09Message, calculate_crc};
 /// Possible DC09 message parse errors.
 #[derive(thiserror::Error, Debug)]
 pub enum DC09Error {
+    /// Invalid UTF-8 sequence.
+    #[error("invalid UTF-8 sequence")]
+    InvalidUtf8(#[from] std::str::Utf8Error),
+
     /// Failed to parse DC09 message header.
     #[error("failed to parse DC09 message header")]
     ParseHeaderError,
@@ -47,6 +51,7 @@ impl DC09Error {
     /// Returns static str for the error variant.
     pub fn reason(&self) -> &'static str {
         match self {
+            DC09Error::InvalidUtf8(_) => "InvalidUtf8",
             DC09Error::ParseHeaderError => "ParseHeaderError",
             DC09Error::ParsePayloadError => "ParsePayloadError",
             DC09Error::DecryptError => "DecryptError",
@@ -56,6 +61,11 @@ impl DC09Error {
             DC09Error::InvalidAccountNumber => "InvalidAccountNumber",
         }
     }
+}
+
+/// Parses the fixed-size DC09 frame prefix: `<LF><crc><len>`.
+pub fn parse_frame_prefix(input: &str) -> IResult<&str, (u16, u16)> {
+    map((tag("\n"), parse_hex, parse_hex), |(_, crc, len)| (crc, len)).parse(input)
 }
 
 /// Parses an account name from the DC09 message.\
