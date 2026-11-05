@@ -1,5 +1,9 @@
 use anyhow::Result;
-use common::{dc09::DC09Message, logging::DisplayMode, scenarios::SignalConfig, time::OffsetDateTime, utils::SharedKeysMap};
+use common::dc09::{DC09Message, FrameBuffer};
+use common::logging::DisplayMode;
+use common::scenarios::SignalConfig;
+use common::time::OffsetDateTime;
+use common::utils::SharedKeysMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::{collections::VecDeque, net::IpAddr, time::Duration};
@@ -220,11 +224,23 @@ impl Dialler {
         log_sent_message(&self.account, message, plain, self.mode);
 
         let mut buffer = [0; 1024];
+        let mut frames = FrameBuffer::new();
         let read_future = async {
-            match stream.read(&mut buffer).await {
-                Ok(0) => log_error!(self, "{}    connection closed by receiver", self.account),
-                Ok(n) => self.process_ack_buffer(&buffer, n),
-                Err(e) => log_error!(self, "{}    failed to read response: {}", self.account, e),
+            loop {
+                match frames.next_frame() {
+                    Ok(Some(frame)) => return self.process_ack_buffer(&frame),
+                    Ok(None) => {},
+                    Err(e) => {
+                        let raw = String::from_utf8_lossy(&frames.take_pending()).into_owned();
+                        return log_error!(self, "{} << ({}) {}", self.account, e, raw.trim());
+                    },
+                }
+
+                match stream.read(&mut buffer).await {
+                    Ok(0) => return log_error!(self, "{}    connection closed by receiver", self.account),
+                    Ok(n) => frames.extend(&buffer[..n]),
+                    Err(e) => return log_error!(self, "{}    failed to read response: {}", self.account, e),
+                }
             }
         };
 
@@ -253,7 +269,7 @@ impl Dialler {
         let mut buffer = [0; 1024];
         let recv_future = async {
             match socket.recv(&mut buffer).await {
-                Ok(n) => self.process_ack_buffer(&buffer, n),
+                Ok(n) => self.process_ack_buffer(&buffer[..n]),
                 Err(e) => log_error!(self, "{}    failed to read response: {}", self.account, e),
             }
         };
@@ -271,8 +287,8 @@ impl Dialler {
         Ok(())
     }
 
-    fn process_ack_buffer(&self, buffer: &[u8; 1024], n: usize) {
-        match core::str::from_utf8(&buffer[..n]) {
+    fn process_ack_buffer(&self, buffer: &[u8]) {
+        match core::str::from_utf8(buffer) {
             Ok(ack) => self.process_ack_message(ack),
             Err(e) => log_error!(self, "{}    received invalid UTF-8 sequence: {}", self.account, e),
         }

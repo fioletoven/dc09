@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.2.6 - 2026-11-05
+
+### Bug Fixes
+
+- fix reading part of a frame or several frames in TCP stream
+
 ## 0.2.5 - 2026-10-31
 
 ### Features
