@@ -2923,9 +2923,9 @@ SOFTWARE.
 
 ### Used by
 
-- **common** (v0.2.5)
-- **dialler** (v0.2.5)
-- **receiver** (v0.2.5)
+- **common** (v0.2.6)
+- **dialler** (v0.2.6)
+- **receiver** (v0.2.6)
 - **r-efi** (v6.0.0) - [repository](https://github.com/r-efi/r-efi)
 - **windows-link** (v0.2.1) - [repository](https://github.com/microsoft/windows-rs)
 - **windows-sys** (v0.61.2) - [repository](https://github.com/microsoft/windows-rs)
