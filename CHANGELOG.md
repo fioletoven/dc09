@@ -1,5 +1,11 @@
 # Change Log
 
+## WIP
+
+### Bug Fixes
+
+- fix `--mtls-ca` command line argument conflict configuration
+
 ## 0.2.6 - 2026-11-05
 
 ### Bug Fixes

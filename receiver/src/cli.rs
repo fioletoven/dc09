@@ -53,15 +53,21 @@ pub struct Args {
     pub tls_key: Option<PathBuf>,
 
     /// Require TLS clients to present a certificate signed by one of the default webpki roots (mTLS).
-    #[arg(long, requires = "tls_cert")]
+    #[arg(long, requires = "tls_cert", requires = "tls_key")]
     pub mtls: bool,
 
     /// Require TLS clients to present a certificate signed by one from this PEM file (mTLS).
-    #[arg(long, value_name = "FILE", requires = "tls_cert", conflicts_with = "mtls_insecure")]
+    #[arg(
+        long,
+        value_name = "FILE",
+        requires = "tls_cert",
+        requires = "tls_key",
+        conflicts_with = "insecure"
+    )]
     pub mtls_ca: Option<PathBuf>,
 
     /// Require TLS clients to present a certificate, but accept any without verification (mTLS).
-    #[arg(long, requires = "tls_cert", conflicts_with = "mtls_ca")]
+    #[arg(long, requires = "tls_cert", requires = "tls_key", conflicts_with = "mtls_ca")]
     pub insecure: bool,
 
     /// Treat TLS connections closed without close_notify as an error.
