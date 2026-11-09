@@ -54,3 +54,29 @@ fn encryption_test() {
 
     assert_eq!(msg, decrypted);
 }
+
+#[test]
+fn invalid_key_test() {
+    let message = DC09Message::new("SIA-DCS".to_owned(), "1234".to_owned(), 1, Some("#1234|NRR".to_owned()));
+    let frame = message.to_encrypted("0123456789ABCDEF").unwrap();
+
+    for key in [None, Some("invalid")] {
+        assert!(matches!(DC09Message::try_from(&frame, key), Err(DC09Error::DecryptError)));
+    }
+}
+
+#[test]
+fn invalid_payload_test() {
+    for payload in ["[abc|#1234|NRR]", "[00", "[0", "", "[", "[\u{e9}", "00"] {
+        let body = format!("\"*SIA-DCS\"0001L0#1234{payload}");
+        let frame = format!("\n{:04X}{:04X}{body}\r", calculate_crc(&body), body.len());
+
+        assert!(
+            matches!(
+                DC09Message::try_from(&frame, Some("0123456789ABCDEF")),
+                Err(DC09Error::DecryptError)
+            ),
+            "unexpected result for payload {payload:?}"
+        );
+    }
+}

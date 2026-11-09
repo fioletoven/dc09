@@ -89,11 +89,13 @@ pub fn parse_dc09(input: &str, key: Option<&str>) -> Result<DC09Message, DC09Err
 
     let is_encrypted = header.token.chars().next().is_some_and(|ch| ch == '*');
     let decrypted = if is_encrypted {
-        if let Some(key) = key {
-            decrypt(&payload[1..payload.len() - 1], key.as_bytes())
-        } else {
-            return Err(DC09Error::DecryptError);
-        }
+        let key = key.ok_or(DC09Error::DecryptError)?;
+        let ciphertext = payload
+            .strip_prefix('[')
+            .and_then(|payload| payload.strip_suffix('\r'))
+            .filter(|ciphertext| !ciphertext.is_empty())
+            .ok_or(DC09Error::DecryptError)?;
+        Some(decrypt(ciphertext, key.as_bytes()).ok_or(DC09Error::DecryptError)?)
     } else {
         None
     };

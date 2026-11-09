@@ -47,7 +47,7 @@ impl Server for UdpServer {
 
         self.state.udp_ready.store(true, Ordering::Relaxed);
 
-        let mut buffer = [0; 2048];
+        let mut buffer = vec![0; usize::from(u16::MAX)];
         loop {
             let (n, addr) = self.socket.recv_from(&mut buffer).await?;
             increase_total_connections(TRANSPORT_NAME);
