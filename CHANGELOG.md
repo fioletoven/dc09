@@ -6,6 +6,7 @@
 
 - fix `--mtls-ca` command line argument conflict configuration
 - fix encrypted payload parsing
+- validate timestamps in encrypted messages
 
 ## 0.2.6 - 2026-11-05
 

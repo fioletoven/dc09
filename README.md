@@ -98,7 +98,7 @@ The DC-09 Receiver Simulator is a command-line test server that handles DC-09 di
 - Optional TLS or mTLS for TCP listeners using a PEM certificate and private key
 - Optional AES encryption/decryption with user-provided key (16, 24, or 32 bytes)
 - Per-account key support via scenario configuration file
-- Configurable static response mode: always `ACK`, `NAK` or `DUH`
+- Configurable static response mode for accepted messages: `ACK`, `NAK` or `DUH`
 - Dynamic response mode switching via HTTP API (override command-line setting)
 - Received signals recording
 - Prometheus metrics

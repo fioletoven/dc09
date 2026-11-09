@@ -1,9 +1,35 @@
 use common::dc09::{DC09Error, DC09Message};
 use common::logging::DisplayMode;
 use std::borrow::Cow;
-use time::OffsetDateTime;
+use time::format_description::BorrowedFormatItem;
+use time::{OffsetDateTime, PrimitiveDateTime, macros::format_description};
 
 use crate::{metrics, server::ResponseMode};
+
+const TIMESTAMP_FORMAT: &[BorrowedFormatItem<'static>] = format_description!("[hour]:[minute]:[second],[month]-[day]-[year]");
+
+pub fn validate_message_timestamp(msg: &DC09Message, now: OffsetDateTime) -> Result<(), DC09Error> {
+    if !msg.was_encrypted() {
+        return Ok(());
+    }
+
+    let timestamp = msg
+        .timestamp
+        .as_deref()
+        .filter(|timestamp| timestamp.len() == 19 && timestamp.is_ascii())
+        .ok_or(DC09Error::InvalidTimestamp)?;
+    let timestamp = PrimitiveDateTime::parse(timestamp, TIMESTAMP_FORMAT)
+        .map_err(|_| DC09Error::InvalidTimestamp)?
+        .assume_utc();
+
+    let difference = timestamp.unix_timestamp() - now.unix_timestamp();
+
+    if (-40..=20).contains(&difference) {
+        Ok(())
+    } else {
+        Err(DC09Error::InvalidTimestamp)
+    }
+}
 
 pub fn build_response_message(msg: DC09Message, key: Option<&str>, mode: ResponseMode) -> String {
     let was_encrypted = msg.was_encrypted();

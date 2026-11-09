@@ -9,6 +9,7 @@ use tokio_rustls::TlsAcceptor;
 
 use crate::metrics::{AppState, RecordedEntry, RecorderHandle, Transport};
 use crate::server::{ProcessMessageResult, ResponseMode, ResponseModes};
+use crate::utils::validate_message_timestamp;
 use crate::utils::{build_response_message, get_received_message};
 use crate::utils::{decrease_active_connections, increase_active_connections, increase_total_connections};
 use crate::utils::{process_invalid_message_metrics, process_valid_message_metrics};
@@ -209,10 +210,18 @@ where
     match DC09Message::try_from(received_message, key) {
         Ok(msg) => {
             log::info!("{} -> {}", addr, get_received_message(received_message, &msg, config.mode));
-            process_valid_message_metrics(TRANSPORT_NAME, received_message, &msg);
 
             let is_heartbeat = msg.is_heartbeat();
-            let mode = if is_heartbeat { heartbeat_mode } else { message_mode };
+            let timestamp_result = validate_message_timestamp(&msg, time::OffsetDateTime::now_utc());
+            let is_valid = timestamp_result.is_ok();
+            let mode = if let Err(error) = timestamp_result {
+                log::warn!("{addr} -> {error}");
+                process_invalid_message_metrics(TRANSPORT_NAME, received_message, &error);
+                ResponseMode::Nak
+            } else {
+                process_valid_message_metrics(TRANSPORT_NAME, received_message, &msg);
+                if is_heartbeat { heartbeat_mode } else { message_mode }
+            };
             let response = if mode == ResponseMode::None {
                 None
             } else {
@@ -226,7 +235,7 @@ where
             };
 
             ProcessMessageResult {
-                is_valid: true,
+                is_valid,
                 is_heartbeat,
                 response,
             }

@@ -1,15 +1,11 @@
-use nom::{
-    IResult, Parser,
-    branch::alt,
-    bytes::complete::{tag, take_till, take_until, take_while_m_n, take_while1},
-    combinator::{map, map_res, opt},
-    multi::many0,
-    sequence::{delimited, preceded},
-};
+use nom::branch::alt;
+use nom::bytes::complete::{tag, take_till, take_until, take_while_m_n, take_while1};
+use nom::combinator::{map, map_res, opt};
+use nom::multi::many0;
+use nom::sequence::{delimited, preceded};
+use nom::{IResult, Parser};
 
-use crate::dc09::decrypt;
-
-use super::{DC09Message, calculate_crc};
+use crate::dc09::{DC09Message, calculate_crc, decrypt};
 
 /// Possible DC09 message parse errors.
 #[derive(thiserror::Error, Debug)]
@@ -45,6 +41,10 @@ pub enum DC09Error {
     /// Invalid account number for received DC09 message.
     #[error("invalid account number")]
     InvalidAccountNumber,
+
+    /// Invalid DC09 timestamp (or out of -40 to +20 window).
+    #[error("invalid DC09 timestamp")]
+    InvalidTimestamp,
 }
 
 impl DC09Error {
@@ -59,6 +59,7 @@ impl DC09Error {
             DC09Error::InvalidCrc => "InvalidCrc",
             DC09Error::InvalidSequenceNumber => "InvalidSequenceNumber",
             DC09Error::InvalidAccountNumber => "InvalidAccountNumber",
+            DC09Error::InvalidTimestamp => "InvalidTimestamp",
         }
     }
 }
