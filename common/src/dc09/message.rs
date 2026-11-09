@@ -113,12 +113,8 @@ impl DC09Message {
     /// Converts the [`DC09Message`] to encrypted `String` representation.
     pub fn to_encrypted(&self, key: &str) -> Option<String> {
         let mut payload = self.get_payload();
-        let data = if self.data.as_ref().is_some_and(|d| !d.is_empty()) {
-            payload.replace_range(0..1, "|");
-            encrypt(&payload, key.as_bytes())?
-        } else {
-            encrypt(&payload[1..], key.as_bytes())?
-        };
+        payload.replace_range(0..1, "|");
+        let data = encrypt(&payload, key.as_bytes())?;
         let body = format!(
             "\"{}{}\"{:04}{}{}#{}[{}",
             if self.token.chars().next().is_none_or(|ch| ch != '*') {

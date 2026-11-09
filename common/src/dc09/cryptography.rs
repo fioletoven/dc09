@@ -48,7 +48,7 @@ where
 
 /// Adds padding to the start of a DC09 message.
 fn pad_message(message: &str) -> String {
-    let pad = 16usize.saturating_sub(message.len() % 16usize);
+    let pad = 16 + message.len().next_multiple_of(16) - message.len();
     let mut rng = rand::rng();
     let mut result = String::with_capacity(message.len() + pad);
     for _ in 0..pad {
