@@ -1,12 +1,9 @@
-use common::dc09::{DC09Error, DC09Message};
+use common::dc09::{DC09Error, DC09Message, TIMESTAMP_FORMAT};
 use common::logging::DisplayMode;
 use std::borrow::Cow;
-use time::format_description::BorrowedFormatItem;
-use time::{OffsetDateTime, PrimitiveDateTime, macros::format_description};
+use time::{OffsetDateTime, PrimitiveDateTime};
 
 use crate::{metrics, server::ResponseMode};
-
-const TIMESTAMP_FORMAT: &[BorrowedFormatItem<'static>] = format_description!("[hour]:[minute]:[second],[month]-[day]-[year]");
 
 pub fn validate_message_timestamp(msg: &DC09Message, now: OffsetDateTime) -> Result<(), DC09Error> {
     if !msg.was_encrypted() {
@@ -62,14 +59,14 @@ pub fn build_response_message(msg: DC09Message, key: Option<&str>, mode: Respons
     }
 }
 
-pub fn process_valid_message_metrics(transport: &str, raw_message: &str, parsed_message: &DC09Message) {
+pub fn process_valid_message_metrics(transport: &str, raw_message: impl AsRef<[u8]>, parsed_message: &DC09Message) {
     metrics::messages_received()
         .with_label_values(&[&parsed_message.token, &parsed_message.account])
         .inc();
 
     metrics::message_size_bytes()
         .with_label_values(&[transport])
-        .observe(raw_message.len() as f64);
+        .observe(raw_message.as_ref().len() as f64);
 
     metrics::last_message_timestamp()
         .with_label_values(&[&parsed_message.account])
@@ -82,10 +79,10 @@ pub fn process_valid_message_metrics(transport: &str, raw_message: &str, parsed_
     }
 }
 
-pub fn process_invalid_message_metrics(transport: &str, raw_message: &str, error: &DC09Error) {
+pub fn process_invalid_message_metrics(transport: &str, raw_message: impl AsRef<[u8]>, error: &DC09Error) {
     metrics::message_size_bytes()
         .with_label_values(&[transport])
-        .observe(raw_message.len() as f64);
+        .observe(raw_message.as_ref().len() as f64);
 
     metrics::messages_failed()
         .with_label_values(&[transport, error.reason()])

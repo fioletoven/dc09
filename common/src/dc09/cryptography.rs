@@ -16,7 +16,7 @@ pub fn encrypt(message: &str, key: &[u8]) -> Option<String> {
 
 /// Decrypts the DC09 message using AES CBC.\
 /// **Note** that it does not remove padding from the message.
-pub fn decrypt(message: &str, key: &[u8]) -> Option<String> {
+pub fn decrypt(message: &str, key: &[u8]) -> Option<Vec<u8>> {
     let message = hex::decode(message).ok()?;
     match key.len() {
         16 => decrypt_internal::<cbc::Decryptor<aes::Aes128>>(message, key, &ZEROS_IV),
@@ -37,13 +37,13 @@ where
     Some(hex::encode_upper(padded))
 }
 
-fn decrypt_internal<C>(mut message: Vec<u8>, key: &[u8], iv: &[u8]) -> Option<String>
+fn decrypt_internal<C>(mut message: Vec<u8>, key: &[u8], iv: &[u8]) -> Option<Vec<u8>>
 where
     C: BlockModeDecrypt + KeyIvInit,
 {
     let cipher = C::new_from_slices(key, iv).ok()?;
     cipher.decrypt_padded::<NoPadding>(&mut message).ok()?;
-    Some(core::str::from_utf8(&message).ok()?.to_string())
+    Some(message)
 }
 
 /// Adds padding to the start of a DC09 message.

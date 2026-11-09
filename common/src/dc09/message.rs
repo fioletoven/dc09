@@ -1,7 +1,7 @@
 use std::{fmt::Display, str};
-use time::{OffsetDateTime, macros::format_description};
+use time::OffsetDateTime;
 
-use super::{DC09Error, calculate_crc, encrypt, parse_dc09};
+use crate::dc09::{DC09Error, TIMESTAMP_FORMAT, calculate_crc, encrypt, parse_dc09};
 
 #[cfg(test)]
 #[path = "./message.tests.rs"]
@@ -55,8 +55,7 @@ impl DC09Message {
 
     // Adds UTC timestamp to the DC09 message.
     pub fn with_timestamp(mut self, timestamp: OffsetDateTime) -> Self {
-        let format = format_description!("[hour]:[minute]:[second],[month]-[day]-[year]");
-        self.timestamp = Some(timestamp.format(&format).expect("Failed to format timestamp"));
+        self.timestamp = Some(timestamp.format(TIMESTAMP_FORMAT).expect("Failed to format timestamp"));
         self
     }
 
@@ -82,8 +81,8 @@ impl DC09Message {
         self
     }
 
-    /// Tries to create [`DC09Message`] from the provided string slice.
-    pub fn try_from(value: &str, key: Option<&str>) -> Result<Self, DC09Error> {
+    /// Tries to create [`DC09Message`] from the provided bytes.
+    pub fn try_from(value: &[u8], key: Option<&str>) -> Result<Self, DC09Error> {
         parse_dc09(value, key)
     }
 
@@ -110,6 +109,17 @@ impl DC09Message {
         self.token.chars().next().is_some_and(|ch| ch == '*')
     }
 
+    /// Sets DC09 message encryption indicator.
+    pub fn set_encrypted(&mut self, is_encrypted: bool) {
+        match (is_encrypted, self.token.starts_with('*')) {
+            (true, false) => self.token.insert(0, '*'),
+            (false, true) => {
+                self.token.remove(0);
+            },
+            _ => {},
+        }
+    }
+
     /// Converts the [`DC09Message`] to encrypted `String` representation.
     pub fn to_encrypted(&self, key: &str) -> Option<String> {
         let mut payload = self.get_payload();
@@ -117,11 +127,7 @@ impl DC09Message {
         let data = encrypt(&payload, key.as_bytes())?;
         let body = format!(
             "\"{}{}\"{:04}{}{}#{}[{}",
-            if self.token.chars().next().is_none_or(|ch| ch != '*') {
-                "*"
-            } else {
-                ""
-            },
+            if self.token.starts_with('*') { "" } else { "*" },
             self.token,
             self.sequence,
             self.receiver.as_deref().unwrap_or(""),
@@ -130,7 +136,12 @@ impl DC09Message {
             data,
         );
 
-        Some(format!("\x0A{:04X}{:04X}{}\x0D", calculate_crc(&body), body.len(), body))
+        Some(format!(
+            "\x0A{:04X}{:04X}{}\x0D",
+            calculate_crc(body.as_bytes()),
+            body.len(),
+            body
+        ))
     }
 
     fn get_payload(&self) -> String {
@@ -173,6 +184,6 @@ impl Display for DC09Message {
             self.get_payload(),
         );
 
-        write!(f, "\x0A{:04X}{:04X}{}\x0D", calculate_crc(&body), body.len(), body)
+        write!(f, "\x0A{:04X}{:04X}{}\x0D", calculate_crc(body.as_bytes()), body.len(), body)
     }
 }

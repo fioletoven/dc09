@@ -1,5 +1,5 @@
 use anyhow::Result;
-use common::dc09::DC09Message;
+use common::dc09::{DC09Message, decode_dc09_text};
 use std::sync::atomic::Ordering;
 use std::{net::SocketAddr, sync::Arc};
 use tokio::net::{ToSocketAddrs, UdpSocket};
@@ -53,25 +53,19 @@ impl Server for UdpServer {
             let (n, addr) = self.socket.recv_from(&mut buffer).await?;
             increase_total_connections(TRANSPORT_NAME);
 
-            match str::from_utf8(&buffer[..n]) {
-                Ok(msg) => {
-                    let mode = &self.state.response_modes;
-                    let outcome = process_message(&tx, addr, msg, &self.config, mode.message(), mode.heartbeat());
+            let msg = &buffer[..n];
+            let mode = &self.state.response_modes;
+            let outcome = process_message(&tx, addr, msg, &self.config, mode.message(), mode.heartbeat());
 
-                    if self.state.recorder.is_recording() {
-                        self.state.recorder.send_entry(RecordedEntry::new(
-                            Transport::Udp,
-                            addr,
-                            outcome.is_valid,
-                            outcome.is_heartbeat,
-                            msg.trim().to_owned(),
-                            outcome.response,
-                        ));
-                    }
-                },
-                Err(err) => {
-                    log::error!("received invalid UTF-8 sequence: {err}");
-                },
+            if self.state.recorder.is_recording() {
+                self.state.recorder.send_entry(RecordedEntry::new(
+                    Transport::Udp,
+                    addr,
+                    outcome.is_valid,
+                    outcome.is_heartbeat,
+                    decode_dc09_text(msg).trim().to_owned(),
+                    outcome.response,
+                ));
             }
         }
     }
@@ -80,13 +74,16 @@ impl Server for UdpServer {
 fn process_message(
     tx: &UnboundedSender<(String, SocketAddr)>,
     addr: SocketAddr,
-    received_message: &str,
+    received_message: impl AsRef<[u8]>,
     config: &ServerConfig,
     message_mode: ResponseMode,
     heartbeat_mode: ResponseMode,
 ) -> ProcessMessageResult {
+    let raw_message = received_message.as_ref();
+    let received_text = decode_dc09_text(raw_message);
+    let received_message = received_text.as_ref();
     let key = config.get_key_for_message(received_message);
-    match DC09Message::try_from(received_message, key) {
+    match DC09Message::try_from(raw_message, key) {
         Ok(msg) => {
             log::info!("{} -> {}", addr, get_received_message(received_message, &msg, config.mode));
 
@@ -95,10 +92,10 @@ fn process_message(
             let is_valid = timestamp_result.is_ok();
             let mode = if let Err(error) = timestamp_result {
                 log::warn!("{addr} -> {error}");
-                process_invalid_message_metrics(TRANSPORT_NAME, received_message, &error);
+                process_invalid_message_metrics(TRANSPORT_NAME, raw_message, &error);
                 ResponseMode::Nak
             } else {
-                process_valid_message_metrics(TRANSPORT_NAME, received_message, &msg);
+                process_valid_message_metrics(TRANSPORT_NAME, raw_message, &msg);
                 if is_heartbeat { heartbeat_mode } else { message_mode }
             };
             let response = if mode == ResponseMode::None {
@@ -121,7 +118,7 @@ fn process_message(
         },
         Err(e) => {
             log::error!("{} -> {}: {}", addr, e, received_message.trim());
-            process_invalid_message_metrics(TRANSPORT_NAME, received_message, &e);
+            process_invalid_message_metrics(TRANSPORT_NAME, raw_message, &e);
 
             ProcessMessageResult {
                 is_valid: false,
