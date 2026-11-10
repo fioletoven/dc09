@@ -420,6 +420,46 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 ---
 
+## BSD 3-Clause &quot;New&quot; or &quot;Revised&quot; License
+
+### Used by
+
+- **encoding_rs** (v0.8.44) - [repository](https://github.com/hsivonen/encoding_rs)
+
+### License text
+
+```
+Copyright © WHATWG (Apple, Google, Mozilla, Microsoft).
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+```
+
+---
+
 ## Community Data License Agreement Permissive 2.0
 
 ### Used by
@@ -694,7 +734,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **cc** (v1.10.0) - [repository](https://github.com/rust-lang/cc-rs)
+- **cc** (v1.11.1) - [repository](https://github.com/rust-lang/cc-rs)
 - **cfg-if** (v1.0.5) - [repository](https://github.com/rust-lang/cfg-if)
 - **cmake** (v0.1.58) - [repository](https://github.com/rust-lang/cmake-rs)
 - **find-msvc-tools** (v0.1.15) - [repository](https://github.com/rust-lang/cc-rs)
@@ -811,7 +851,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **mime** (v0.3.17) - [repository](https://github.com/hyperium/mime)
+- **mime** (v0.3.18) - [repository](https://github.com/hyperium/mime)
 
 ### License text
 
@@ -846,7 +886,7 @@ THE SOFTWARE.
 ### Used by
 
 - **bitflags** (v2.13.2) - [repository](https://github.com/bitflags/bitflags)
-- **log** (v0.4.34) - [repository](https://github.com/rust-lang/log)
+- **log** (v0.4.35) - [repository](https://github.com/rust-lang/log)
 - **regex-automata** (v0.4.18) - [repository](https://github.com/rust-lang/regex)
 - **regex-syntax** (v0.8.11) - [repository](https://github.com/rust-lang/regex)
 
@@ -1492,6 +1532,45 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
+- **core_detect** (v1.0.0) - [repository](https://github.com/thomcc/core_detect)
+
+### License text
+
+```
+Copyright (c) 2017-2020 The Rust Project Developers
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+
+```
+
+---
+
+## MIT License
+
+### Used by
+
 - **bytes** (v1.12.1) - [repository](https://github.com/tokio-rs/bytes)
 
 ### License text
@@ -1531,7 +1610,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **smallvec** (v1.16.4) - [repository](https://github.com/servo/rust-smallvec)
+- **smallvec** (v1.16.5) - [repository](https://github.com/servo/rust-smallvec)
 
 ### License text
 
@@ -1610,7 +1689,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **aes** (v0.9.3) - [repository](https://github.com/RustCrypto/block-ciphers)
+- **aes** (v0.9.4) - [repository](https://github.com/RustCrypto/block-ciphers)
 
 ### License text
 
@@ -2260,7 +2339,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **inout** (v0.2.5) - [repository](https://github.com/RustCrypto/utils)
+- **inout** (v0.2.6) - [repository](https://github.com/RustCrypto/utils)
 
 ### License text
 
@@ -2339,7 +2418,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
-- **rustls-pki-types** (v1.15.1) - [repository](https://github.com/rustls/pki-types)
+- **rustls-pki-types** (v1.16.0) - [repository](https://github.com/rustls/pki-types)
 
 ### License text
 
@@ -2707,6 +2786,46 @@ DEALINGS IN THE SOFTWARE.
 
 ### Used by
 
+- **encoding_rs** (v0.8.44) - [repository](https://github.com/hsivonen/encoding_rs)
+- **multiversion_no_op** (v1.0.0) - [repository](https://github.com/hsivonen/multiversion_no_op)
+
+### License text
+
+```
+Copyright Mozilla Foundation
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+
+```
+
+---
+
+## MIT License
+
+### Used by
+
 - **fs_extra** (v1.3.0) - [repository](https://github.com/webdesus/fs_extra)
 
 ### License text
@@ -2995,21 +3114,54 @@ SOFTWARE.
 
 ### Used by
 
+- **simdutf8** (v0.1.5) - [repository](https://github.com/rusticstuff/simdutf8)
+
+### License text
+
+```
+MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+---
+
+## MIT License
+
+### Used by
+
 - **anyhow** (v1.0.104) - [repository](https://github.com/dtolnay/anyhow)
 - **atomic-waker** (v1.1.2) - [repository](https://github.com/smol-rs/atomic-waker)
-- **itoa** (v1.0.18) - [repository](https://github.com/dtolnay/itoa)
+- **itoa** (v1.0.19) - [repository](https://github.com/dtolnay/itoa)
 - **lazy_static** (v1.5.1) - [repository](https://github.com/rust-lang-nursery/lazy-static.rs)
 - **once_cell** (v1.21.4) - [repository](https://github.com/matklad/once_cell)
 - **pin-project-lite** (v0.2.17) - [repository](https://github.com/taiki-e/pin-project-lite)
 - **proc-macro2** (v1.0.107) - [repository](https://github.com/dtolnay/proc-macro2)
 - **quote** (v1.0.47) - [repository](https://github.com/dtolnay/quote)
+- **rustversion** (v1.0.23) - [repository](https://github.com/dtolnay/rustversion)
 - **serde** (v1.0.229) - [repository](https://github.com/serde-rs/serde)
 - **serde_core** (v1.0.229) - [repository](https://github.com/serde-rs/serde)
 - **serde_derive** (v1.0.229) - [repository](https://github.com/serde-rs/serde)
 - **serde_json** (v1.0.154) - [repository](https://github.com/serde-rs/json)
 - **serde_path_to_error** (v0.1.20) - [repository](https://github.com/dtolnay/path-to-error)
 - **syn** (v2.0.119) - [repository](https://github.com/dtolnay/syn)
-- **syn** (v3.0.9) - [repository](https://github.com/dtolnay/syn)
+- **syn** (v3.0.10) - [repository](https://github.com/dtolnay/syn)
 - **thiserror-impl** (v1.0.69) - [repository](https://github.com/dtolnay/thiserror)
 - **thiserror-impl** (v2.0.21) - [repository](https://github.com/dtolnay/thiserror)
 - **thiserror** (v1.0.69) - [repository](https://github.com/dtolnay/thiserror)
