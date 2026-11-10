@@ -67,18 +67,17 @@ impl DC09Error {
 
 /// Decodes DC09 text as UTF-8, falling back to Windows-1252 for any extended data that isn't valid UTF-8.
 pub fn decode_dc09_text(input: &[u8]) -> Cow<'_, str> {
-    match str::from_utf8(input) {
-        Ok(text) => Cow::Borrowed(text),
-        Err(_) => {
-            let mut text = String::with_capacity(input.len());
-            for field in input.split_inclusive(|byte| matches!(byte, b'[' | b']')) {
-                match str::from_utf8(field) {
-                    Ok(field) => text.push_str(field),
-                    Err(_) => text.push_str(&encoding_rs::WINDOWS_1252.decode_without_bom_handling(field).0),
-                }
+    if let Ok(text) = str::from_utf8(input) {
+        Cow::Borrowed(text)
+    } else {
+        let mut text = String::with_capacity(input.len());
+        for field in input.split_inclusive(|byte| matches!(byte, b'[' | b']')) {
+            match str::from_utf8(field) {
+                Ok(field) => text.push_str(field),
+                Err(_) => text.push_str(&encoding_rs::WINDOWS_1252.decode_without_bom_handling(field).0),
             }
-            Cow::Owned(text)
-        },
+        }
+        Cow::Owned(text)
     }
 }
 

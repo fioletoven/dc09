@@ -113,3 +113,83 @@ fn invalid_payload_test() {
         );
     }
 }
+
+#[test]
+fn missing_line_prefix_test() {
+    for token in ["SIA-DCS", "ACK", "*SIA-DCS"] {
+        let body = format!("\"{token}\"0001#1234[]");
+        let frame = format!("\n{:04X}{:04X}{body}\r", calculate_crc(body.as_bytes()), body.len());
+
+        assert!(matches!(
+            DC09Message::try_from(frame.as_bytes(), None),
+            Err(DC09Error::ParseHeaderError)
+        ));
+    }
+}
+
+#[test]
+fn malformed_payload_test() {
+    for payload in [
+        "#1234|NRR]",
+        "[]GARBAGE",
+        "[][Iunfinished",
+        "[]\rGARBAGE",
+        "[]\r",
+        "[]_16:20:01,09-24-2025GARBAGE",
+        "[]_16:20:01",
+    ] {
+        let body = format!("\"SIA-DCS\"0001L0#1234{payload}");
+        let frame = format!("\n{:04X}{:04X}{body}\r", calculate_crc(body.as_bytes()), body.len());
+
+        assert!(
+            matches!(
+                DC09Message::try_from(frame.as_bytes(), None),
+                Err(DC09Error::ParsePayloadError)
+            ),
+            "unexpected result for payload {payload:?}"
+        );
+    }
+}
+
+#[test]
+fn missing_or_invalid_message_terminator_test() {
+    for encrypted in [false, true] {
+        let key = "0123456789ABCDEF";
+        let message = DC09Message::new("SIA-DCS".to_owned(), "1234".to_owned(), 1, None);
+        let frame = if encrypted {
+            message.to_encrypted(key).unwrap()
+        } else {
+            message.to_string()
+        };
+
+        for &terminator in b"X\n" {
+            let mut malformed = frame.as_bytes().to_vec();
+            *malformed.last_mut().unwrap() = terminator;
+            assert!(matches!(
+                DC09Message::try_from(&malformed, Some(key)),
+                Err(DC09Error::ParsePayloadError)
+            ));
+        }
+
+        assert!(matches!(
+            DC09Message::try_from(&frame.as_bytes()[..frame.len() - 1], Some(key)),
+            Err(DC09Error::InvalidLength)
+        ));
+    }
+}
+
+#[test]
+fn message_length_limit_test() {
+    for length in [0x0FFF, 0x1000, 0x1029] {
+        let body = format!("\"SIA-DCS\"0001L0#1234[{}]", "x".repeat(length - 22));
+        assert_eq!(body.len(), length);
+        let frame = format!("\n{:04X}{:04X}{body}\r", calculate_crc(body.as_bytes()), body.len());
+        let parsed = DC09Message::try_from(frame.as_bytes(), None);
+
+        if length == 0x0FFF {
+            assert!(parsed.is_ok());
+        } else {
+            assert!(matches!(parsed, Err(DC09Error::ParseHeaderError)));
+        }
+    }
+}

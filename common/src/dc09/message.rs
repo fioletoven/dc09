@@ -1,7 +1,7 @@
 use std::{fmt::Display, str};
 use time::OffsetDateTime;
 
-use crate::dc09::{DC09Error, TIMESTAMP_FORMAT, calculate_crc, encrypt, parse_dc09};
+use crate::dc09::{DC09Error, TIMESTAMP_FORMAT, calculate_crc, encrypt, is_heartbeat, parse_dc09};
 
 #[cfg(test)]
 #[path = "./message.tests.rs"]
@@ -23,9 +23,11 @@ pub struct DC09Message {
 impl DC09Message {
     /// Creates new [`DC09Message`] instance.
     pub fn new(token: String, account: String, sequence: u16, data: Option<String>) -> Self {
+        let is_heartbeat = is_heartbeat(&token);
+
         Self {
             token,
-            sequence,
+            sequence: if is_heartbeat { 0 } else { sequence },
             receiver: None,
             line_prefix: None,
             account,
@@ -101,7 +103,7 @@ impl DC09Message {
 
     /// Returns `true` if message is a heartbeat.
     pub fn is_heartbeat(&self) -> bool {
-        self.token == "NULL" || self.token == "*NULL"
+        is_heartbeat(&self.token)
     }
 
     /// Returns `true` if the DC09 message was (or should be) encrypted.

@@ -1,5 +1,5 @@
 use anyhow::Result;
-use common::dc09::{DC09Message, FrameBuffer, decode_dc09_text};
+use common::dc09::{DC09Message, FrameBuffer, decode_dc09_text, is_heartbeat};
 use common::logging::DisplayMode;
 use common::scenarios::SignalConfig;
 use common::time::OffsetDateTime;
@@ -155,9 +155,11 @@ impl Dialler {
 
     /// Sends DC09 message with specified ID token.
     pub async fn send_message(&mut self, token: String, message: String) -> Result<()> {
-        self.sequence += 1;
-        if self.sequence > 9999 {
-            self.sequence = 1;
+        if !is_heartbeat(&token) {
+            self.sequence += 1;
+            if self.sequence > 9999 {
+                self.sequence = 1;
+            }
         }
 
         let mut message = DC09Message::new(token, self.account.clone(), self.sequence, Some(message))

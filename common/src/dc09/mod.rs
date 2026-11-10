@@ -17,3 +17,8 @@ pub fn calculate_crc(message: &[u8]) -> u16 {
     let crc = crc::Crc::<u16>::new(&crc::CRC_16_ARC);
     crc.checksum(message)
 }
+
+/// Returns `true` if specified token is a heartbeat token.
+pub fn is_heartbeat(token: &str) -> bool {
+    token == "NULL" || token == "*NULL"
+}
