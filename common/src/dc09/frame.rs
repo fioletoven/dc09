@@ -71,10 +71,7 @@ impl FrameBuffer {
             return Ok(None);
         }
 
-        let (_, (_, len)) = std::str::from_utf8(&self.pending[..HEADER_LEN])
-            .ok()
-            .and_then(|header| parse_frame_prefix(header).ok())
-            .ok_or(FrameError::InvalidHeader)?;
+        let (_, (_, len)) = parse_frame_prefix(&self.pending[..HEADER_LEN]).map_err(|_| FrameError::InvalidHeader)?;
 
         let frame_len = HEADER_LEN + usize::from(len) + 1;
         if self.pending.len() < frame_len {

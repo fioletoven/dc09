@@ -1,10 +1,13 @@
 # Change Log
 
-## WIP
+## 0.2.7 - 2026-11-10
 
 ### Bug Fixes
 
 - fix `--mtls-ca` command line argument conflict configuration
+- fix encrypted payload parsing
+- validate timestamps in encrypted messages
+- fix message length parsing (`0LLL` instead of `LLLL`)
 
 ## 0.2.6 - 2026-11-05
 

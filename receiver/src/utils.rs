@@ -1,49 +1,71 @@
-use common::dc09::{DC09Error, DC09Message};
+use common::dc09::{DC09Error, DC09Message, TIMESTAMP_FORMAT};
 use common::logging::DisplayMode;
 use std::borrow::Cow;
-use time::OffsetDateTime;
+use time::{OffsetDateTime, PrimitiveDateTime};
 
 use crate::{metrics, server::ResponseMode};
 
-pub fn build_response_message(msg: DC09Message, key: Option<&str>, mode: ResponseMode) -> String {
-    let was_encrypted = msg.was_encrypted();
-    let response = match mode {
-        ResponseMode::Ack => Some(
-            DC09Message::ack(msg.account, msg.sequence)
-                .with_receiver(msg.receiver)
-                .with_line_prefix(msg.line_prefix),
-        ),
-        ResponseMode::Nak => Some(DC09Message::nak()),
-        ResponseMode::Duh => Some(
-            DC09Message::duh(msg.account, msg.sequence)
-                .with_receiver(msg.receiver)
-                .with_line_prefix(msg.line_prefix),
-        ),
-        ResponseMode::None => None,
-    };
-    let Some(response) = response else { return String::new() };
+pub fn validate_message_timestamp(msg: &DC09Message, now: OffsetDateTime) -> Result<(), DC09Error> {
+    if !msg.was_encrypted() {
+        return Ok(());
+    }
 
-    if was_encrypted && mode == ResponseMode::Ack {
-        if let Some(key) = key {
-            response
-                .to_encrypted(key)
-                .expect("Cannot encrypt DC09 message with the provided key")
-        } else {
-            response.to_string()
-        }
+    let timestamp = msg
+        .timestamp
+        .as_deref()
+        .filter(|timestamp| timestamp.len() == 19 && timestamp.is_ascii())
+        .ok_or(DC09Error::InvalidTimestamp)?;
+    let timestamp = PrimitiveDateTime::parse(timestamp, TIMESTAMP_FORMAT)
+        .map_err(|_| DC09Error::InvalidTimestamp)?
+        .assume_utc();
+
+    let difference = timestamp.unix_timestamp() - now.unix_timestamp();
+
+    if (-40..=20).contains(&difference) {
+        Ok(())
     } else {
-        response.to_string()
+        Err(DC09Error::InvalidTimestamp)
     }
 }
 
-pub fn process_valid_message_metrics(transport: &str, raw_message: &str, parsed_message: &DC09Message) {
+pub fn build_response_message(msg: DC09Message, key: Option<&str>, mode: ResponseMode) -> Option<String> {
+    let was_encrypted = msg.was_encrypted();
+    let response = match mode {
+        ResponseMode::Ack => DC09Message::ack(msg.account, msg.sequence)
+            .with_receiver(msg.receiver)
+            .with_line_prefix(msg.line_prefix),
+        ResponseMode::Nak => DC09Message::nak(),
+        ResponseMode::Duh => DC09Message::duh(msg.account, msg.sequence)
+            .with_receiver(msg.receiver)
+            .with_line_prefix(msg.line_prefix),
+        ResponseMode::None => return None,
+    };
+
+    let frame = if was_encrypted && mode == ResponseMode::Ack {
+        if let Some(key) = key {
+            response.to_encrypted(key)
+        } else {
+            Some(response.to_string())
+        }
+    } else {
+        Some(response.to_string())
+    };
+
+    if frame.is_none() {
+        log::error!("Cannot encrypt DC09 response with the provided key");
+    }
+
+    frame
+}
+
+pub fn process_valid_message_metrics(transport: &str, raw_message: impl AsRef<[u8]>, parsed_message: &DC09Message) {
     metrics::messages_received()
         .with_label_values(&[&parsed_message.token, &parsed_message.account])
         .inc();
 
     metrics::message_size_bytes()
         .with_label_values(&[transport])
-        .observe(raw_message.len() as f64);
+        .observe(raw_message.as_ref().len() as f64);
 
     metrics::last_message_timestamp()
         .with_label_values(&[&parsed_message.account])
@@ -56,10 +78,10 @@ pub fn process_valid_message_metrics(transport: &str, raw_message: &str, parsed_
     }
 }
 
-pub fn process_invalid_message_metrics(transport: &str, raw_message: &str, error: &DC09Error) {
+pub fn process_invalid_message_metrics(transport: &str, raw_message: impl AsRef<[u8]>, error: &DC09Error) {
     metrics::message_size_bytes()
         .with_label_values(&[transport])
-        .observe(raw_message.len() as f64);
+        .observe(raw_message.as_ref().len() as f64);
 
     metrics::messages_failed()
         .with_label_values(&[transport, error.reason()])
@@ -84,12 +106,12 @@ pub fn decrease_active_connections() {
 pub fn get_received_message<'a>(unmodified: &'a str, msg: &DC09Message, mode: DisplayMode) -> Cow<'a, str> {
     match mode {
         DisplayMode::Target => unmodified.trim().into(),
-        DisplayMode::Plain => msg.to_string().trim().to_string().into(),
+        DisplayMode::Plain => msg.to_string().trim().to_owned().into(),
         DisplayMode::Both => {
             if msg.was_encrypted() {
                 format!("{} → {}", unmodified.trim(), msg.to_string().trim()).into()
             } else {
-                msg.to_string().trim().to_string().into()
+                msg.to_string().trim().to_owned().into()
             }
         },
     }

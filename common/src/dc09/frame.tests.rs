@@ -74,3 +74,27 @@ fn invalid_terminator_test() {
 
     assert_eq!(Err(FrameError::InvalidTerminator), buffer.next_frame());
 }
+
+#[test]
+fn oversized_length_prefix_test() {
+    for prefix in [b"\nFFFF1000", b"\nFFFF1029", b"\nFFFFFFFF", b"\nFFFFf000"] {
+        let mut buffer = FrameBuffer::new();
+        buffer.extend(prefix);
+
+        assert_eq!(Err(FrameError::InvalidHeader), buffer.next_frame());
+    }
+}
+
+#[test]
+fn maximum_length_frame_test() {
+    for prefix in [b"\nFFFF0FFF", b"\nFFFF0fff"] {
+        let mut frame = prefix.to_vec();
+        frame.resize(9 + 0x0FFF, b'x');
+        frame.push(b'\r');
+        let mut buffer = FrameBuffer::new();
+        buffer.extend(&frame);
+
+        assert_eq!(Ok(Some(frame)), buffer.next_frame());
+        assert!(!buffer.has_pending());
+    }
+}

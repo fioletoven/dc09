@@ -1,5 +1,5 @@
 use anyhow::Result;
-use common::dc09::{DC09Message, FrameBuffer};
+use common::dc09::{DC09Message, FrameBuffer, decode_dc09_text, is_heartbeat};
 use common::logging::DisplayMode;
 use common::scenarios::SignalConfig;
 use common::time::OffsetDateTime;
@@ -155,26 +155,33 @@ impl Dialler {
 
     /// Sends DC09 message with specified ID token.
     pub async fn send_message(&mut self, token: String, message: String) -> Result<()> {
-        self.sequence += 1;
-        if self.sequence > 9999 {
-            self.sequence = 1;
+        if !is_heartbeat(&token) {
+            self.sequence += 1;
+            if self.sequence > 9999 {
+                self.sequence = 1;
+            }
         }
 
-        let message = DC09Message::new(token, self.account.clone(), self.sequence, Some(message))
+        let mut message = DC09Message::new(token, self.account.clone(), self.sequence, Some(message))
             .with_receiver(self.receiver.clone())
             .with_line_prefix(self.line_prefix.clone());
 
-        let plain = if self.key.is_some() && self.mode != DisplayMode::Target {
+        let key = self.key();
+        if key.is_some() {
+            message = message.with_timestamp(OffsetDateTime::now_utc());
+            message.set_encrypted(true);
+        }
+
+        let plain = if key.is_some() && self.mode != DisplayMode::Target {
             Some(message.to_string())
         } else {
             None
         };
 
-        let message = if let Some(key) = self.key() {
+        let message = if let Some(key) = key {
             message
-                .with_timestamp(OffsetDateTime::now_utc())
                 .to_encrypted(key)
-                .expect("Cannot encrypt DC09 message with provided key")
+                .ok_or_else(|| anyhow::anyhow!("Cannot encrypt DC09 message with provided key"))?
         } else {
             message.to_string()
         };
@@ -288,14 +295,8 @@ impl Dialler {
     }
 
     fn process_ack_buffer(&self, buffer: &[u8]) {
-        match core::str::from_utf8(buffer) {
-            Ok(ack) => self.process_ack_message(ack),
-            Err(e) => log_error!(self, "{}    received invalid UTF-8 sequence: {}", self.account, e),
-        }
-    }
-
-    fn process_ack_message(&self, message: &str) {
-        match DC09Message::try_from(message, self.key()) {
+        let message = decode_dc09_text(buffer);
+        match DC09Message::try_from(buffer, self.key()) {
             Ok(msg) => match msg.validate(&self.account, self.sequence) {
                 Ok(()) => log::info!("{} << {}", self.account, message.trim()),
                 Err(e) => log_error!(self, "{} << ({}) {}", self.account, e, message.trim()),

@@ -1,5 +1,5 @@
 use anyhow::Result;
-use common::dc09::{DC09Error, DC09Message, FrameBuffer};
+use common::dc09::{DC09Error, DC09Message, FrameBuffer, decode_dc09_text};
 use std::sync::atomic::Ordering;
 use std::{net::SocketAddr, sync::Arc};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
@@ -9,6 +9,7 @@ use tokio_rustls::TlsAcceptor;
 
 use crate::metrics::{AppState, RecordedEntry, RecorderHandle, Transport};
 use crate::server::{ProcessMessageResult, ResponseMode, ResponseModes};
+use crate::utils::validate_message_timestamp;
 use crate::utils::{build_response_message, get_received_message};
 use crate::utils::{decrease_active_connections, increase_active_connections, increase_total_connections};
 use crate::utils::{process_invalid_message_metrics, process_valid_message_metrics};
@@ -165,17 +166,7 @@ where
             },
         };
 
-        let msg = match str::from_utf8(&frame) {
-            Ok(msg) => msg,
-            Err(err) => {
-                log::error!("received invalid UTF-8 sequence: {err}");
-                process_error(addr, recorder, &String::from_utf8_lossy(&frame), &DC09Error::from(err));
-
-                return false;
-            },
-        };
-
-        let outcome = process_message(socket, addr, msg, config, mode.message(), mode.heartbeat()).await;
+        let outcome = process_message(socket, addr, &frame, config, mode.message(), mode.heartbeat()).await;
 
         if recorder.is_recording() {
             recorder.send_entry(RecordedEntry::new(
@@ -183,7 +174,7 @@ where
                 *addr,
                 outcome.is_valid,
                 outcome.is_heartbeat,
-                msg.trim().to_owned(),
+                decode_dc09_text(&frame).trim().to_owned(),
                 outcome.response,
             ));
         }
@@ -197,7 +188,7 @@ where
 async fn process_message<S>(
     socket: &mut S,
     addr: &SocketAddr,
-    received_message: &str,
+    received_message: impl AsRef<[u8]>,
     config: &ServerConfig,
     message_mode: ResponseMode,
     heartbeat_mode: ResponseMode,
@@ -205,35 +196,47 @@ async fn process_message<S>(
 where
     S: AsyncWrite + Unpin,
 {
+    let raw_message = received_message.as_ref();
+    let received_text = decode_dc09_text(raw_message);
+    let received_message = received_text.as_ref();
     let key = config.get_key_for_message(received_message);
-    match DC09Message::try_from(received_message, key) {
+    match DC09Message::try_from(raw_message, key) {
         Ok(msg) => {
             log::info!("{} -> {}", addr, get_received_message(received_message, &msg, config.mode));
-            process_valid_message_metrics(TRANSPORT_NAME, received_message, &msg);
 
             let is_heartbeat = msg.is_heartbeat();
-            let mode = if is_heartbeat { heartbeat_mode } else { message_mode };
-            let response = if mode == ResponseMode::None {
-                None
+            let timestamp_result = validate_message_timestamp(&msg, time::OffsetDateTime::now_utc());
+            let is_valid = timestamp_result.is_ok();
+            let mode = if let Err(error) = timestamp_result {
+                log::warn!("{addr} -> {error}");
+                process_invalid_message_metrics(TRANSPORT_NAME, raw_message, &error);
+                ResponseMode::Nak
             } else {
-                let response = build_response_message(msg, key, mode);
+                process_valid_message_metrics(TRANSPORT_NAME, raw_message, &msg);
+                if is_heartbeat { heartbeat_mode } else { message_mode }
+            };
+            let response = if mode != ResponseMode::None
+                && let Some(response) = build_response_message(msg, key, mode)
+            {
                 let trimmed = response.trim().to_owned();
 
                 log::info!("{addr} <- {trimmed}");
                 let _ = socket.write_all(response.as_bytes()).await;
 
                 Some(trimmed)
+            } else {
+                None
             };
 
             ProcessMessageResult {
-                is_valid: true,
+                is_valid,
                 is_heartbeat,
                 response,
             }
         },
         Err(e) => {
             log::error!("{} -> {}: {}", addr, e, received_message.trim());
-            process_invalid_message_metrics(TRANSPORT_NAME, received_message, &e);
+            process_invalid_message_metrics(TRANSPORT_NAME, raw_message, &e);
 
             ProcessMessageResult {
                 is_valid: false,
