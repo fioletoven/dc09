@@ -87,10 +87,9 @@ impl ServerConfig {
     pub fn get_key_for_message(&self, received_message: &str) -> Option<&str> {
         if !self.diallers.is_empty()
             && let Ok(name) = parse_dc09_account_name(received_message)
-            && self.diallers.contains_key(&name)
+            && let Some(index) = self.diallers.get(name)
         {
-            let index = self.diallers[&name];
-            return self.keys.get(&index).map(String::as_str);
+            return self.keys.get(index).map(String::as_str);
         }
 
         self.keys.get(&0).map(String::as_str)

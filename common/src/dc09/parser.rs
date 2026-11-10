@@ -1,6 +1,6 @@
 use nom::branch::alt;
-use nom::bytes::complete::{tag, take_till, take_until, take_while_m_n, take_while1};
-use nom::combinator::{map, map_res, opt};
+use nom::bytes::complete::{tag, take_until, take_while_m_n, take_while1};
+use nom::combinator::{all_consuming, map, map_res, opt};
 use nom::multi::many0;
 use nom::sequence::{delimited, preceded};
 use nom::{IResult, Parser};
@@ -84,16 +84,16 @@ pub fn decode_dc09_text(input: &[u8]) -> Cow<'_, str> {
 
 /// Parses the fixed-size DC09 frame prefix: `<LF><crc><len>`.
 pub fn parse_frame_prefix(input: &[u8]) -> IResult<&[u8], (u16, u16)> {
-    map((tag("\n"), parse_hex, parse_hex), |(_, crc, len)| (crc, len)).parse(input)
+    map((tag("\n"), parse_hex, parse_length), |(_, crc, len)| (crc, len)).parse(input)
 }
 
 /// Parses an account name from the DC09 message.\
 /// **Note** that this function does not validate CRC of the message.
-pub fn parse_dc09_account_name(input: &str) -> Result<String, DC09Error> {
+pub fn parse_dc09_account_name(input: &str) -> Result<&str, DC09Error> {
     let Ok((_, header)) = parse_dc09_header(input.as_bytes()) else {
         return Err(DC09Error::ParseHeaderError);
     };
-    Ok(header.account.to_owned())
+    Ok(header.account)
 }
 
 /// Parses a complete DC09 message.\
@@ -105,28 +105,30 @@ pub fn parse_dc09(input: &[u8], key: Option<&str>) -> Result<DC09Message, DC09Er
 
     validate(input, header.len, header.crc)?;
 
+    let payload = payload.strip_suffix(b"\r").ok_or(DC09Error::ParsePayloadError)?;
     let is_encrypted = header.token.starts_with('*');
     let decrypted = if is_encrypted {
         let key = key.ok_or(DC09Error::DecryptError)?;
         let ciphertext = payload
             .strip_prefix(b"[")
-            .and_then(|payload| payload.strip_suffix(b"\r"))
             .filter(|ciphertext| !ciphertext.is_empty())
             .ok_or(DC09Error::DecryptError)?;
-        let ciphertext = str::from_utf8(ciphertext).map_err(|_| DC09Error::DecryptError)?;
         let mut plaintext = decrypt(ciphertext, key.as_bytes()).ok_or(DC09Error::DecryptError)?;
         let pad_end = plaintext
             .iter()
             .position(|byte| matches!(byte, b'|' | b'[' | b']'))
             .filter(|position| plaintext[*position] == b'|')
             .ok_or(DC09Error::DecryptError)?;
-        plaintext.drain(..=pad_end);
-        Some(plaintext)
+        plaintext[pad_end] = b'[';
+        Some((plaintext, pad_end))
     } else {
         None
     };
 
-    let payload = parse_dc09_payload(decrypted.as_deref().unwrap_or(payload));
+    let payload = decrypted
+        .as_ref()
+        .map_or(payload, |(plaintext, pad_end)| &plaintext[*pad_end..]);
+    let payload = all_consuming(parse_dc09_payload).parse(payload);
 
     match payload {
         Ok(p) => {
@@ -138,7 +140,7 @@ pub fn parse_dc09(input: &[u8], key: Option<&str>) -> Result<DC09Message, DC09Er
                 line_prefix: header.line_prefix.map(|l| format!("L{l}")),
                 account: header.account.to_string(),
                 data: if data.is_empty() { None } else { Some(data) },
-                extended: p.1.extended.iter().map(|data| decode_dc09_text(data).into_owned()).collect(),
+                extended: p.1.extended,
                 timestamp: p.1.timestamp.map(str::from_utf8).transpose()?.map(str::to_owned),
             })
         },
@@ -193,7 +195,7 @@ struct ParsedHeader<'a> {
 
 struct ParsedPayload<'a> {
     data: &'a [u8],
-    extended: Vec<&'a [u8]>,
+    extended: Vec<String>,
     timestamp: Option<&'a [u8]>,
 }
 
@@ -203,12 +205,12 @@ fn parse_dc09_header(input: &[u8]) -> IResult<&[u8], ParsedHeader<'_>> {
         (
             tag("\n"),
             parse_hex,
-            parse_hex,
+            parse_length,
             parse_token,
             parse_sequence,
             alt((
                 fixed_nak_account,
-                (opt(parse_receiver), opt(parse_account_prefix), parse_account),
+                (opt(parse_receiver), map(parse_account_prefix, Some), parse_account),
             )),
         ),
         |(_, crc, len, token, sequence, (receiver, line_prefix, account))| ParsedHeader {
@@ -229,11 +231,10 @@ fn parse_dc09_payload(input: &'_ [u8]) -> IResult<&'_ [u8], ParsedPayload<'_>> {
     map(
         (
             parse_data,
-            many0(parse_extended_data),
-            opt((tag(&b"_"[..]), take_till(|byte| byte == b'\r'))),
-            opt(tag(&b"\r"[..])),
+            many0(map(parse_extended_data, |data| decode_dc09_text(data).into_owned())),
+            opt((tag(&b"_"[..]), take_while_m_n(19, 19, |byte| byte != b'\r'))),
         ),
-        |(data, extended, timestamp, _)| ParsedPayload {
+        |(data, extended, timestamp)| ParsedPayload {
             data,
             extended,
             timestamp: timestamp.map(|t| t.1),
@@ -247,6 +248,18 @@ fn parse_hex(input: &[u8]) -> IResult<&[u8], u16> {
     map_res(
         map_res(take_while_m_n(4, 4, |b: u8| b.is_ascii_hexdigit()), str::from_utf8),
         |s: &str| u16::from_str_radix(s, 16),
+    )
+    .parse(input)
+}
+
+/// Parses a DC09 message length.
+fn parse_length(input: &[u8]) -> IResult<&[u8], u16> {
+    preceded(
+        tag("0"),
+        map_res(
+            map_res(take_while_m_n(3, 3, |b: u8| b.is_ascii_hexdigit()), str::from_utf8),
+            |s: &str| u16::from_str_radix(s, 16),
+        ),
     )
     .parse(input)
 }
@@ -302,7 +315,7 @@ fn parse_account(input: &[u8]) -> IResult<&[u8], &str> {
 
 /// Parses data enclosed in square brackets.
 fn parse_data(input: &[u8]) -> IResult<&[u8], &[u8]> {
-    delimited(opt(tag(&b"["[..])), take_until(&b"]"[..]), tag(&b"]"[..])).parse(input)
+    delimited(tag(&b"["[..]), take_until(&b"]"[..]), tag(&b"]"[..])).parse(input)
 }
 
 /// Parses extended data enclosed in square brackets.

@@ -16,7 +16,7 @@ pub fn encrypt(message: &str, key: &[u8]) -> Option<String> {
 
 /// Decrypts the DC09 message using AES CBC.\
 /// **Note** that it does not remove padding from the message.
-pub fn decrypt(message: &str, key: &[u8]) -> Option<Vec<u8>> {
+pub fn decrypt(message: impl AsRef<[u8]>, key: &[u8]) -> Option<Vec<u8>> {
     let message = hex::decode(message).ok()?;
     match key.len() {
         16 => decrypt_internal::<cbc::Decryptor<aes::Aes128>>(message, key, &ZEROS_IV),

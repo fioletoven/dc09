@@ -179,7 +179,7 @@ impl Dialler {
         let message = if let Some(key) = key {
             message
                 .to_encrypted(key)
-                .expect("Cannot encrypt DC09 message with provided key")
+                .ok_or_else(|| anyhow::anyhow!("Cannot encrypt DC09 message with provided key"))?
         } else {
             message.to_string()
         };

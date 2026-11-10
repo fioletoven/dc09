@@ -28,35 +28,34 @@ pub fn validate_message_timestamp(msg: &DC09Message, now: OffsetDateTime) -> Res
     }
 }
 
-pub fn build_response_message(msg: DC09Message, key: Option<&str>, mode: ResponseMode) -> String {
+pub fn build_response_message(msg: DC09Message, key: Option<&str>, mode: ResponseMode) -> Option<String> {
     let was_encrypted = msg.was_encrypted();
     let response = match mode {
-        ResponseMode::Ack => Some(
-            DC09Message::ack(msg.account, msg.sequence)
-                .with_receiver(msg.receiver)
-                .with_line_prefix(msg.line_prefix),
-        ),
-        ResponseMode::Nak => Some(DC09Message::nak()),
-        ResponseMode::Duh => Some(
-            DC09Message::duh(msg.account, msg.sequence)
-                .with_receiver(msg.receiver)
-                .with_line_prefix(msg.line_prefix),
-        ),
-        ResponseMode::None => None,
+        ResponseMode::Ack => DC09Message::ack(msg.account, msg.sequence)
+            .with_receiver(msg.receiver)
+            .with_line_prefix(msg.line_prefix),
+        ResponseMode::Nak => DC09Message::nak(),
+        ResponseMode::Duh => DC09Message::duh(msg.account, msg.sequence)
+            .with_receiver(msg.receiver)
+            .with_line_prefix(msg.line_prefix),
+        ResponseMode::None => return None,
     };
-    let Some(response) = response else { return String::new() };
 
-    if was_encrypted && mode == ResponseMode::Ack {
+    let frame = if was_encrypted && mode == ResponseMode::Ack {
         if let Some(key) = key {
-            response
-                .to_encrypted(key)
-                .expect("Cannot encrypt DC09 message with the provided key")
+            response.to_encrypted(key)
         } else {
-            response.to_string()
+            Some(response.to_string())
         }
     } else {
-        response.to_string()
+        Some(response.to_string())
+    };
+
+    if frame.is_none() {
+        log::error!("Cannot encrypt DC09 response with the provided key");
     }
+
+    frame
 }
 
 pub fn process_valid_message_metrics(transport: &str, raw_message: impl AsRef<[u8]>, parsed_message: &DC09Message) {
@@ -107,12 +106,12 @@ pub fn decrease_active_connections() {
 pub fn get_received_message<'a>(unmodified: &'a str, msg: &DC09Message, mode: DisplayMode) -> Cow<'a, str> {
     match mode {
         DisplayMode::Target => unmodified.trim().into(),
-        DisplayMode::Plain => msg.to_string().trim().to_string().into(),
+        DisplayMode::Plain => msg.to_string().trim().to_owned().into(),
         DisplayMode::Both => {
             if msg.was_encrypted() {
                 format!("{} → {}", unmodified.trim(), msg.to_string().trim()).into()
             } else {
-                msg.to_string().trim().to_string().into()
+                msg.to_string().trim().to_owned().into()
             }
         },
     }

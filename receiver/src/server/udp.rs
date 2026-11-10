@@ -98,16 +98,17 @@ fn process_message(
                 process_valid_message_metrics(TRANSPORT_NAME, raw_message, &msg);
                 if is_heartbeat { heartbeat_mode } else { message_mode }
             };
-            let response = if mode == ResponseMode::None {
-                None
-            } else {
-                let response = build_response_message(msg, key, mode);
+            let response = if mode != ResponseMode::None
+                && let Some(response) = build_response_message(msg, key, mode)
+            {
                 let trimmed = response.trim().to_owned();
 
                 log::info!("{addr} <- {trimmed}");
                 let _ = tx.send((response, addr));
 
                 Some(trimmed)
+            } else {
+                None
             };
 
             ProcessMessageResult {
