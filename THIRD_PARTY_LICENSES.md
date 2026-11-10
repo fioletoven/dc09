@@ -3042,9 +3042,9 @@ SOFTWARE.
 
 ### Used by
 
-- **common** (v0.2.6)
-- **dialler** (v0.2.6)
-- **receiver** (v0.2.6)
+- **common** (v0.2.7)
+- **dialler** (v0.2.7)
+- **receiver** (v0.2.7)
 - **r-efi** (v6.0.0) - [repository](https://github.com/r-efi/r-efi)
 - **windows-link** (v0.2.1) - [repository](https://github.com/microsoft/windows-rs)
 - **windows-sys** (v0.61.2) - [repository](https://github.com/microsoft/windows-rs)

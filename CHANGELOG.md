@@ -1,6 +1,6 @@
 # Change Log
 
-## WIP
+## 0.2.7 - 2026-11-10
 
 ### Bug Fixes
 
