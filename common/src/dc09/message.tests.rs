@@ -18,10 +18,22 @@ fn parse_message_test() {
 }
 
 #[test]
+fn account_name_invalid_header_test() {
+    for frame in ["", "not a frame", "\n00000000\"SIA-DCS\"0001#1234[]\r"] {
+        assert!(matches!(
+            crate::dc09::parse_dc09_account_name(frame),
+            Err(DC09Error::ParseHeaderError)
+        ));
+    }
+}
+
+#[test]
 fn parse_nak_test() {
-    let parsed = DC09Message::try_from("\nE4410025\"NAK\"0000R0L0A0[]_16:20:01,09-24-2025\r".as_bytes(), None).unwrap();
+    let frame = "\nE4410025\"NAK\"0000R0L0A0[]_16:20:01,09-24-2025\r";
+    let parsed = DC09Message::try_from(frame.as_bytes(), None).unwrap();
     assert_eq!("NAK", parsed.token);
     assert_eq!("A0", parsed.account);
+    assert_eq!(crate::dc09::parse_dc09_account_name(frame).unwrap(), "A0");
 }
 
 #[test]
@@ -53,6 +65,24 @@ fn encryption_test() {
     let decrypted = DC09Message::try_from(encrypted.as_bytes(), Some(key)).unwrap();
 
     assert_eq!(msg, decrypted);
+}
+
+#[test]
+fn decrypt_string_and_bytes_test() {
+    for key in [
+        "0123456789ABCDEF",
+        "0123456789ABCDEF01234567",
+        "0123456789ABCDEF0123456789ABCDEF",
+    ] {
+        let payload = "|#1234|NRR]";
+        let ciphertext = crate::dc09::encrypt(payload, key.as_bytes()).unwrap();
+        let from_string = crate::dc09::decrypt(ciphertext.as_str(), key.as_bytes()).unwrap();
+        let from_bytes = crate::dc09::decrypt(ciphertext.as_bytes(), key.as_bytes()).unwrap();
+
+        assert_eq!(from_string, from_bytes);
+        assert!(from_bytes.ends_with(payload.as_bytes()));
+        assert!(crate::dc09::decrypt([0xFF; 32], key.as_bytes()).is_none());
+    }
 }
 
 #[test]
