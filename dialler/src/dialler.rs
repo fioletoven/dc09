@@ -201,7 +201,7 @@ impl Dialler {
             tokio::time::sleep(Duration::from_millis(signal.delay.into())).await;
         }
 
-        let message = signal.message.map(|m| format!("#{}|{}", self.account, m)).unwrap_or_default();
+        let message = signal.message.map_or_default(|m| format!("#{}|{}", self.account, m));
         if let Err(error) = self.send_message(signal.token, message).await {
             log_error!(self, "{}    {}", self.account, error);
             return false;

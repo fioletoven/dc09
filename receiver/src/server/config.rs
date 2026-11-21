@@ -70,7 +70,7 @@ impl ServerConfig {
             key_path,
             client_auth,
             if self.mtls_diagnostics {
-                Some(super::mtls::observe_client_certificate)
+                Some(super::tcp::observe_client_certificate)
             } else {
                 None
             },

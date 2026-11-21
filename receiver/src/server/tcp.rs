@@ -1,11 +1,14 @@
 use anyhow::Result;
 use common::dc09::{DC09Error, DC09Message, FrameBuffer, decode_dc09_text};
+use std::cell::Cell;
 use std::sync::atomic::Ordering;
 use std::{net::SocketAddr, sync::Arc};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
-use tokio::net::{TcpListener, ToSocketAddrs};
+use tokio::net::{TcpListener, TcpStream, ToSocketAddrs};
 use tokio::task::JoinHandle;
 use tokio_rustls::TlsAcceptor;
+use tokio_rustls::rustls::pki_types::CertificateDer;
+use tokio_rustls::server::TlsStream;
 
 use crate::metrics::{AppState, ClientCertificate, RecordedEntry, RecorderHandle, Transport};
 use crate::server::{ProcessMessageResult, ResponseMode, ResponseModes};
@@ -64,7 +67,7 @@ impl Server for TcpServer {
                         async move {
                             match tls_acceptor {
                                 Some(acceptor) if config.mtls_diagnostics => {
-                                    if let Some((stream, certificate)) = super::mtls::accept(acceptor, stream, addr).await {
+                                    if let Some((stream, certificate)) = accept_cert(acceptor, stream, addr).await {
                                         process_connection(stream, addr, config, mode, recorder, certificate.as_ref()).await;
                                     }
                                 },
@@ -86,6 +89,50 @@ impl Server for TcpServer {
                 self.connections.retain(|t| !t.is_finished());
             }
         }
+    }
+}
+
+// We need to preserve certificate as rustls do not expose rejected certificates on the stream.
+tokio::task_local! {
+    static OBSERVED_CERTIFICATE: Cell<Option<ClientCertificate>>;
+}
+
+pub fn observe_client_certificate(cert: &CertificateDer<'_>) {
+    let _ = OBSERVED_CERTIFICATE.try_with(|slot| slot.set(Some(cert.into())));
+}
+
+async fn accept_cert(
+    acceptor: TlsAcceptor,
+    stream: TcpStream,
+    addr: SocketAddr,
+) -> Option<(TlsStream<TcpStream>, Option<ClientCertificate>)> {
+    let (result, cert) = OBSERVED_CERTIFICATE
+        .scope(Cell::new(None), async move {
+            let result = acceptor.accept(stream).await;
+            (result, OBSERVED_CERTIFICATE.with(Cell::take))
+        })
+        .await;
+
+    match result {
+        Ok(stream) => {
+            // A resumed session may supply its peer certificate without calling the verifier.
+            let cert = cert.or_else(|| ClientCertificate::from_connection(stream.get_ref().1));
+            if let Some(cert) = &cert {
+                let subject = cert.subject.as_deref().unwrap_or("<unavailable>");
+                log::info!("{addr} *  subject={subject:?}, thumbprint={}", cert.thumbprint);
+            }
+
+            Some((stream, cert))
+        },
+        Err(error) => {
+            if let Some(cert) = cert {
+                let subject = cert.subject.as_deref().unwrap_or("<unavailable>");
+                log::info!("{addr} *  subject={subject:?}, thumbprint={}", cert.thumbprint);
+            }
+
+            log::warn!("TLS handshake failed for {addr}: {error}");
+            None
+        },
     }
 }
 

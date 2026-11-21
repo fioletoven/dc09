@@ -1,3 +1,4 @@
+use aws_lc_rs::digest::{SHA256, digest};
 use serde::Serialize;
 use std::fmt::Write;
 use std::net::SocketAddr;
@@ -5,6 +6,10 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::sync::{mpsc, oneshot};
+use tokio_rustls::rustls::ServerConnection;
+use tokio_rustls::rustls::pki_types::CertificateDer;
+use x509_cert::Certificate;
+use x509_cert::der::Decode;
 
 #[derive(Debug, Clone, Copy, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -26,6 +31,24 @@ impl std::fmt::Display for Transport {
 pub struct ClientCertificate {
     pub subject: Option<String>,
     pub thumbprint: String,
+}
+
+impl From<&CertificateDer<'_>> for ClientCertificate {
+    fn from(cert: &CertificateDer<'_>) -> Self {
+        Self {
+            subject: Certificate::from_der(cert.as_ref())
+                .ok()
+                .map(|cert| cert.tbs_certificate().subject().to_string()),
+            thumbprint: hex::encode(digest(&SHA256, cert).as_ref()),
+        }
+    }
+}
+
+impl ClientCertificate {
+    /// The end-entity certificate the peer presented, if any.
+    pub fn from_connection(conn: &ServerConnection) -> Option<Self> {
+        conn.peer_certificates().and_then(|chain| chain.first()).map(Self::from)
+    }
 }
 
 /// A single captured DC09 exchange.
