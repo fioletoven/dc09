@@ -71,7 +71,7 @@ pub struct Args {
     #[arg(long, requires = "tls_cert", requires = "tls_key", conflicts_with = "mtls_ca")]
     pub insecure: bool,
 
-    /// Log mTLS handshake outcomes and client certificate details.
+    /// Log mTLS client certificate details.
     #[arg(long, requires = "tls_cert", requires = "tls_key", requires = "client_auth")]
     pub mtls_diagnostics: bool,
 
