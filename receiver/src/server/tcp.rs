@@ -1,13 +1,16 @@
 use anyhow::Result;
 use common::dc09::{DC09Error, DC09Message, FrameBuffer, decode_dc09_text};
+use std::cell::Cell;
 use std::sync::atomic::Ordering;
 use std::{net::SocketAddr, sync::Arc};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
-use tokio::net::{TcpListener, ToSocketAddrs};
+use tokio::net::{TcpListener, TcpStream, ToSocketAddrs};
 use tokio::task::JoinHandle;
 use tokio_rustls::TlsAcceptor;
+use tokio_rustls::rustls::pki_types::CertificateDer;
+use tokio_rustls::server::TlsStream;
 
-use crate::metrics::{AppState, RecordedEntry, RecorderHandle, Transport};
+use crate::metrics::{AppState, ClientCertificate, RecordedEntry, RecorderHandle, Transport};
 use crate::server::{ProcessMessageResult, ResponseMode, ResponseModes};
 use crate::utils::validate_message_timestamp;
 use crate::utils::{build_response_message, get_received_message};
@@ -63,11 +66,16 @@ impl Server for TcpServer {
 
                         async move {
                             match tls_acceptor {
+                                Some(acceptor) if config.mtls_diagnostics => {
+                                    if let Some((stream, certificate)) = accept_cert(acceptor, stream, addr).await {
+                                        process_connection(stream, addr, config, mode, recorder, certificate.as_ref()).await;
+                                    }
+                                },
                                 Some(acceptor) => match acceptor.accept(stream).await {
-                                    Ok(stream) => process_connection(stream, addr, config, mode, recorder).await,
+                                    Ok(stream) => process_connection(stream, addr, config, mode, recorder, None).await,
                                     Err(error) => log::warn!("TLS handshake failed for {addr}: {error}"),
                                 },
-                                None => process_connection(stream, addr, config, mode, recorder).await,
+                                None => process_connection(stream, addr, config, mode, recorder, None).await,
                             }
                         }
                     });
@@ -84,12 +92,57 @@ impl Server for TcpServer {
     }
 }
 
+// We need to preserve certificate as rustls do not expose rejected certificates on the stream.
+tokio::task_local! {
+    static OBSERVED_CERTIFICATE: Cell<Option<ClientCertificate>>;
+}
+
+pub fn observe_client_certificate(cert: &CertificateDer<'_>) {
+    let _ = OBSERVED_CERTIFICATE.try_with(|slot| slot.set(Some(cert.into())));
+}
+
+async fn accept_cert(
+    acceptor: TlsAcceptor,
+    stream: TcpStream,
+    addr: SocketAddr,
+) -> Option<(TlsStream<TcpStream>, Option<ClientCertificate>)> {
+    let (result, cert) = OBSERVED_CERTIFICATE
+        .scope(Cell::new(None), async move {
+            let result = acceptor.accept(stream).await;
+            (result, OBSERVED_CERTIFICATE.with(Cell::take))
+        })
+        .await;
+
+    match result {
+        Ok(stream) => {
+            // A resumed session may supply its peer certificate without calling the verifier.
+            let cert = cert.or_else(|| ClientCertificate::from_connection(stream.get_ref().1));
+            if let Some(cert) = &cert {
+                let subject = cert.subject.as_deref().unwrap_or("<unavailable>");
+                log::info!("{addr} *  subject={subject:?}, thumbprint={}", cert.thumbprint);
+            }
+
+            Some((stream, cert))
+        },
+        Err(error) => {
+            if let Some(cert) = cert {
+                let subject = cert.subject.as_deref().unwrap_or("<unavailable>");
+                log::info!("{addr} *  subject={subject:?}, thumbprint={}", cert.thumbprint);
+            }
+
+            log::warn!("TLS handshake failed for {addr}: {error}");
+            None
+        },
+    }
+}
+
 async fn process_connection<S>(
     mut socket: S,
     addr: SocketAddr,
     config: Arc<ServerConfig>,
     mode: Arc<ResponseModes>,
     recorder: RecorderHandle,
+    certificate: Option<&ClientCertificate>,
 ) where
     S: AsyncRead + AsyncWrite + Unpin,
 {
@@ -118,7 +171,7 @@ async fn process_connection<S>(
             Ok(n) => {
                 frames.extend(&buffer[..n]);
 
-                if !process_frames(&mut socket, &addr, &mut frames, &config, &mode, &recorder).await {
+                if !process_frames(&mut socket, &addr, &mut frames, &config, &mode, &recorder, certificate).await {
                     break;
                 }
             },
@@ -149,6 +202,7 @@ async fn process_frames<S>(
     config: &ServerConfig,
     mode: &ResponseModes,
     recorder: &RecorderHandle,
+    certificate: Option<&ClientCertificate>,
 ) -> bool
 where
     S: AsyncWrite + Unpin,
@@ -160,7 +214,7 @@ where
             Err(err) => {
                 let raw = String::from_utf8_lossy(&frames.take_pending()).into_owned();
                 log::error!("{} -> {}: {}", addr, err, raw.trim());
-                process_error(addr, recorder, &raw, &DC09Error::from(err));
+                process_error(addr, recorder, &raw, &DC09Error::from(err), certificate.cloned());
 
                 return false;
             },
@@ -169,14 +223,16 @@ where
         let outcome = process_message(socket, addr, &frame, config, mode.message(), mode.heartbeat()).await;
 
         if recorder.is_recording() {
-            recorder.send_entry(RecordedEntry::new(
+            let entry = RecordedEntry::new(
                 Transport::Tcp,
                 *addr,
                 outcome.is_valid,
                 outcome.is_heartbeat,
                 decode_dc09_text(&frame).trim().to_owned(),
-                outcome.response,
-            ));
+            )
+            .with_response(outcome.response)
+            .with_client_certificate(certificate.cloned());
+            recorder.send_entry(entry);
         }
 
         if !outcome.is_valid {
@@ -247,17 +303,17 @@ where
     }
 }
 
-fn process_error(addr: &SocketAddr, recorder: &RecorderHandle, message: &str, err: &DC09Error) {
+fn process_error(
+    addr: &SocketAddr,
+    recorder: &RecorderHandle,
+    message: &str,
+    err: &DC09Error,
+    certificate: Option<ClientCertificate>,
+) {
     process_invalid_message_metrics(TRANSPORT_NAME, message, err);
 
     if recorder.is_recording() {
-        recorder.send_entry(RecordedEntry::new(
-            Transport::Tcp,
-            *addr,
-            false,
-            false,
-            message.trim().to_owned(),
-            None,
-        ));
+        let entry = RecordedEntry::new(Transport::Tcp, *addr, false, false, message.trim().to_owned());
+        recorder.send_entry(entry.with_client_certificate(certificate));
     }
 }

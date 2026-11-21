@@ -1,5 +1,12 @@
 # Change Log
 
+## 0.2.8 - 2026-11-21
+
+### Features
+
+- add mTLS diagnostics mode that shows client certificate data
+- send recorded signals as chunks for CSV and JSON output
+
 ## 0.2.7 - 2026-11-10
 
 ### Bug Fixes

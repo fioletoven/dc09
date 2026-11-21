@@ -92,23 +92,34 @@ pub fn build_tls_connector(
 }
 
 /// Builds a TLS acceptor from the given certificate and private key paths.
-pub fn build_tls_acceptor(cert_path: &Path, key_path: &Path, client_auth: &ClientAuth) -> Result<TlsAcceptor, TlsConfigError> {
+pub fn build_tls_acceptor(
+    cert_path: &Path,
+    key_path: &Path,
+    client_auth: &ClientAuth,
+    observe_client_certificate: Option<fn(&CertificateDer<'_>)>,
+) -> Result<TlsAcceptor, TlsConfigError> {
     let cert_chain = load_cert_chain(cert_path)?;
     let private_key = load_private_key(key_path)?;
     let builder = ServerConfig::builder();
     let provider = Arc::clone(builder.crypto_provider());
 
-    let builder = match client_auth {
-        ClientAuth::Disabled => builder.with_no_client_auth(),
-        ClientAuth::WebPkiRoots => builder.with_client_cert_verifier(
-            WebPkiClientVerifier::builder_with_provider(Arc::new(webpki_roots_store()), provider).build()?,
-        ),
+    let verifier: Option<Arc<dyn ClientCertVerifier>> = match client_auth {
+        ClientAuth::Disabled => None,
+        ClientAuth::WebPkiRoots => {
+            Some(WebPkiClientVerifier::builder_with_provider(Arc::new(webpki_roots_store()), provider).build()?)
+        },
         ClientAuth::Certificate(ca_path) => {
             let mut roots = RootCertStore::empty();
             add_certificates(&mut roots, ca_path)?;
-            builder.with_client_cert_verifier(WebPkiClientVerifier::builder_with_provider(Arc::new(roots), provider).build()?)
+            Some(WebPkiClientVerifier::builder_with_provider(Arc::new(roots), provider).build()?)
         },
-        ClientAuth::Insecure => builder.with_client_cert_verifier(Arc::new(AnyClientCertificate { provider })),
+        ClientAuth::Insecure => Some(Arc::new(AnyClientCertificate { provider })),
+    };
+
+    let builder = match (verifier, observe_client_certificate) {
+        (Some(inner), Some(observe)) => builder.with_client_cert_verifier(Arc::new(ObservedClientVerifier { inner, observe })),
+        (Some(verifier), None) => builder.with_client_cert_verifier(verifier),
+        (None, _) => builder.with_no_client_auth(),
     };
 
     let config = builder.with_single_cert(cert_chain, private_key)?;
@@ -246,5 +257,61 @@ impl ClientCertVerifier for AnyClientCertificate {
 
     fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
         self.provider.signature_verification_algorithms.supported_schemes()
+    }
+}
+
+#[derive(Debug)]
+struct ObservedClientVerifier {
+    inner: Arc<dyn ClientCertVerifier>,
+    observe: fn(&CertificateDer<'_>),
+}
+
+impl ClientCertVerifier for ObservedClientVerifier {
+    fn offer_client_auth(&self) -> bool {
+        self.inner.offer_client_auth()
+    }
+
+    fn client_auth_mandatory(&self) -> bool {
+        self.inner.client_auth_mandatory()
+    }
+
+    fn root_hint_subjects(&self) -> &[DistinguishedName] {
+        self.inner.root_hint_subjects()
+    }
+
+    fn verify_client_cert(
+        &self,
+        end_entity: &CertificateDer<'_>,
+        intermediates: &[CertificateDer<'_>],
+        now: UnixTime,
+    ) -> Result<ClientCertVerified, rustls::Error> {
+        (self.observe)(end_entity);
+        self.inner.verify_client_cert(end_entity, intermediates, now)
+    }
+
+    fn verify_tls12_signature(
+        &self,
+        message: &[u8],
+        cert: &CertificateDer<'_>,
+        dss: &DigitallySignedStruct,
+    ) -> Result<HandshakeSignatureValid, rustls::Error> {
+        self.inner.verify_tls12_signature(message, cert, dss)
+    }
+
+    fn verify_tls13_signature(
+        &self,
+        message: &[u8],
+        cert: &CertificateDer<'_>,
+        dss: &DigitallySignedStruct,
+    ) -> Result<HandshakeSignatureValid, rustls::Error> {
+        self.inner.verify_tls13_signature(message, cert, dss)
+    }
+
+    fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
+        self.inner.supported_verify_schemes()
+    }
+
+    fn requires_raw_public_keys(&self) -> bool {
+        self.inner.requires_raw_public_keys()
     }
 }

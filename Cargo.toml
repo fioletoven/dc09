@@ -3,19 +3,21 @@ resolver = "3"
 members = ["common", "dialler", "receiver"]
 
 [workspace.package]
-version = "0.2.7"
+version = "0.2.8"
 edition = "2024"
-rust-version = "1.95"
+rust-version = "1.100"
 license = "MIT"
 
 [workspace.dependencies]
 aes = { version = "0.9" }
 anyhow = { version = "1.0" }
+aws-lc-rs = { version = "1", default-features = false }
 axum = { version = "0.8" }
 cbc = { version = "0.2", features = ["block-padding", "alloc"] }
 clap = { version = "4.6", features = ["derive"] }
 crc = { version = "3.4" }
 encoding_rs = { version = "0.8" }
+futures-util = { version = "0.3", default-features = false }
 hex = { version = "0.4" }
 log = { version = "0.4" }
 nom = { version = "8.0" }
@@ -29,11 +31,11 @@ thiserror = { version = "2.0" }
 time = { version = "0.3", features = ["local-offset", "formatting", "macros"] }
 tokio = { version = "1", features = ["fs", "io-util", "macros", "net", "rt-multi-thread", "rt", "time"] }
 tokio-rustls = { version = "0.26" }
-tokio-util = { version = "0.7" }
 tracing-appender = { version = "0.2" }
 tracing-error = { version = "0.2" }
 tracing-subscriber = { version = "0.3", features = ["std", "fmt", "time", "env-filter"] }
 webpki-roots = { version = "1" }
+x509-cert = { version = "0.3", default-features = false }
 
 [profile.release]
 codegen-units = 1 # Reduce number of codegen units to increase optimizations
