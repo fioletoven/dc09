@@ -58,14 +58,15 @@ impl Server for UdpServer {
             let outcome = process_message(&tx, addr, msg, &self.config, mode.message(), mode.heartbeat());
 
             if self.state.recorder.is_recording() {
-                self.state.recorder.send_entry(RecordedEntry::new(
+                let entry = RecordedEntry::new(
                     Transport::Udp,
                     addr,
                     outcome.is_valid,
                     outcome.is_heartbeat,
                     decode_dc09_text(msg).trim().to_owned(),
-                    outcome.response,
-                ));
+                )
+                .with_response(outcome.response);
+                self.state.recorder.send_entry(entry);
             }
         }
     }

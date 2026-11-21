@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{ArgGroup, Parser};
 use common::logging::DisplayMode;
 use common::scenarios::Scenarios;
 use common::tls::ClientAuth;
@@ -11,6 +11,7 @@ use crate::server::{ResponseMode, ResponseModes};
 /// Test server that handles DC09 dialler connections.
 #[derive(Parser, Debug, Clone)]
 #[command(version, about, long_about = None)]
+#[command(group(ArgGroup::new("client_auth").multiple(true).args(["mtls", "mtls_ca", "insecure"])))]
 pub struct Args {
     /// IP address to listen on.
     #[arg(default_value = "127.0.0.1")]
@@ -69,6 +70,10 @@ pub struct Args {
     /// Require TLS clients to present a certificate, but accept any without verification (mTLS).
     #[arg(long, requires = "tls_cert", requires = "tls_key", conflicts_with = "mtls_ca")]
     pub insecure: bool,
+
+    /// Log mTLS handshake outcomes and client certificate details.
+    #[arg(long, requires = "tls_cert", requires = "tls_key", requires = "client_auth")]
+    pub mtls_diagnostics: bool,
 
     /// Treat TLS connections closed without close_notify as an error.
     #[arg(long, requires = "tls_cert", requires = "tls_key")]

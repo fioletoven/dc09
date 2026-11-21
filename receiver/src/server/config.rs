@@ -19,6 +19,7 @@ pub struct ServerConfig {
     pub keys: SharedKeysMap,
     pub mode: DisplayMode,
     pub strict_tls_shutdown: bool,
+    pub mtls_diagnostics: bool,
     tls_acceptor: Option<TlsAcceptor>,
     is_mtls: bool,
 }
@@ -42,6 +43,7 @@ impl ServerConfig {
             keys,
             mode: DisplayMode::Target,
             strict_tls_shutdown: false,
+            mtls_diagnostics: false,
             tls_acceptor: None,
             is_mtls: false,
         }
@@ -59,9 +61,20 @@ impl ServerConfig {
         cert_path: &Path,
         key_path: &Path,
         client_auth: &ClientAuth,
+        mtls_diagnostics: bool,
         strict_shutdown: bool,
     ) -> Result<Self> {
-        self.tls_acceptor = Some(build_tls_acceptor(cert_path, key_path, client_auth)?);
+        self.mtls_diagnostics = mtls_diagnostics && *client_auth != ClientAuth::Disabled;
+        self.tls_acceptor = Some(build_tls_acceptor(
+            cert_path,
+            key_path,
+            client_auth,
+            if self.mtls_diagnostics {
+                Some(super::mtls::observe_client_certificate)
+            } else {
+                None
+            },
+        )?);
         self.strict_tls_shutdown = strict_shutdown;
         self.is_mtls = *client_auth != ClientAuth::Disabled;
 

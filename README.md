@@ -122,6 +122,7 @@ The DC-09 Receiver Simulator is a command-line test server that handles DC-09 di
 | `--mtls`                | Require client certificates signed by default webpki roots    | false         | `--mtls`                              |
 | `--mtls-ca`             | Require client certificates signed by a CA from the PEM file  | None          | `--mtls-ca ./certs/ca.pem`            |
 | `--insecure`            | Require client certificates, but accept any without checks    | false         | `--insecure`                          |
+| `--mtls-diagnostics`    | Log mTLS handshake outcomes and client certificate details    | false         | `--mtls-diagnostics`                  |
 | `--strict-tls-shutdown` | Treat TLS connections closed without close_notify as an error | false         | `--strict-tls-shutdown`               |
 
 > `--nak` and `--duh` are mutually exclusive. If neither is set, the default is `ACK`. The HTTP API can override this behaviour at runtime.  

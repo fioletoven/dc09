@@ -22,6 +22,12 @@ impl std::fmt::Display for Transport {
     }
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct ClientCertificate {
+    pub subject: Option<String>,
+    pub thumbprint: String,
+}
+
 /// A single captured DC09 exchange.
 #[derive(Debug, Clone, Serialize)]
 pub struct RecordedEntry {
@@ -32,17 +38,13 @@ pub struct RecordedEntry {
     pub heartbeat: bool,
     pub message: String,
     pub response: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub client_cert: Option<ClientCertificate>,
 }
 
 impl RecordedEntry {
-    pub fn new(
-        transport: Transport,
-        peer: SocketAddr,
-        valid: bool,
-        heartbeat: bool,
-        message: impl Into<String>,
-        response: Option<String>,
-    ) -> Self {
+    /// Creates a new recorded entry with the given parameters.
+    pub fn new(transport: Transport, peer: SocketAddr, valid: bool, heartbeat: bool, message: impl Into<String>) -> Self {
         let timestamp_ms = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or(Duration::ZERO)
@@ -55,8 +57,21 @@ impl RecordedEntry {
             valid,
             heartbeat,
             message: message.into(),
-            response,
+            response: None,
+            client_cert: None,
         }
+    }
+
+    /// Sets the response for the recorded entry.
+    pub fn with_response(mut self, response: Option<String>) -> Self {
+        self.response = response;
+        self
+    }
+
+    /// Sets the client certificate for the recorded entry.
+    pub fn with_client_certificate(mut self, certificate: Option<ClientCertificate>) -> Self {
+        self.client_cert = certificate;
+        self
     }
 }
 
@@ -227,10 +242,22 @@ fn spawn_recorder(status: Arc<AtomicBool>) -> mpsc::UnboundedSender<RecordingEve
 }
 
 fn snapshot_to_csv(snapshot: &RecorderSnapshot) -> String {
-    const HEADER: &str = "timestamp_ms,transport,peer,valid,heartbeat,message,response\n";
+    const HEADER: &str = "timestamp_ms,transport,peer,valid,heartbeat,message,response";
+    const HEADER_CERT: &str = ",client_cert_subject,client_cert_thumbprint";
 
-    let mut out = String::with_capacity(HEADER.len() + snapshot.entries.len() * 128);
+    let include_certificate = snapshot.entries.iter().any(|e| e.client_cert.is_some());
+    let capacity = if include_certificate {
+        HEADER.len() + HEADER_CERT.len() + snapshot.entries.len() * 296
+    } else {
+        HEADER.len() + snapshot.entries.len() * 192
+    };
+    let mut out = String::with_capacity(capacity);
+
     out.push_str(HEADER);
+    if include_certificate {
+        out.push_str(HEADER_CERT);
+    }
+    out.push('\n');
 
     for e in &snapshot.entries {
         let _ = write!(
@@ -242,6 +269,18 @@ fn snapshot_to_csv(snapshot: &RecorderSnapshot) -> String {
         out.push(',');
         if let Some(r) = e.response.as_deref() {
             csv_write_escaped(&mut out, r);
+        }
+        if include_certificate {
+            out.push(',');
+            if let Some(cert) = &e.client_cert {
+                if let Some(subject) = &cert.subject {
+                    csv_write_escaped(&mut out, subject);
+                }
+                out.push(',');
+                out.push_str(&cert.thumbprint);
+            } else {
+                out.push(',');
+            }
         }
         out.push('\n');
     }
