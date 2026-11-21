@@ -92,19 +92,32 @@ impl From<bool> for RecordingStatus {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone)]
 pub struct RecorderSnapshot {
     pub status: RecordingStatus,
-    pub entries: Vec<RecordedEntry>,
+    pub entries: Vec<Arc<RecordedEntry>>,
 }
 
 impl RecorderSnapshot {
-    pub fn to_csv(&self) -> String {
-        snapshot_to_csv(self)
+    /// Yields the CSV document in ~64 KiB chunks.
+    pub fn csv_chunks(self) -> CsvChunks {
+        let include_cert = self.entries.iter().any(|e| e.client_cert.is_some());
+        CsvChunks {
+            entries: self.entries.into_iter(),
+            include_cert,
+            header_sent: false,
+        }
     }
 
-    pub fn to_json(&self) -> String {
-        serde_json::to_string(self).unwrap_or_default()
+    /// Yields the JSON document in ~64 KiB chunks.
+    pub fn json_chunks(self) -> JsonChunks {
+        JsonChunks {
+            status: self.status,
+            entries: self.entries.into_iter(),
+            started: false,
+            first: true,
+            done: false,
+        }
     }
 }
 
@@ -191,13 +204,13 @@ fn spawn_recorder(status: Arc<AtomicBool>) -> mpsc::UnboundedSender<RecordingEve
     let (tx, mut rx) = mpsc::unbounded_channel::<RecordingEvent>();
 
     tokio::spawn(async move {
-        let mut entries: Vec<RecordedEntry> = Vec::new();
+        let mut entries: Vec<Arc<RecordedEntry>> = Vec::new();
 
         while let Some(event) = rx.recv().await {
             match event {
                 RecordingEvent::Entry(entry) => {
                     if status.load(Ordering::Relaxed) {
-                        entries.push(entry);
+                        entries.push(Arc::new(entry));
                     }
                 },
                 RecordingEvent::Start => {
@@ -218,7 +231,7 @@ fn spawn_recorder(status: Arc<AtomicBool>) -> mpsc::UnboundedSender<RecordingEve
                         status: status.load(Ordering::Relaxed).into(),
                         entries: entries
                             .iter()
-                            .filter(|s| s.heartbeat == heartbeats || s.heartbeat != messages)
+                            .filter(|e| if e.heartbeat { heartbeats } else { messages })
                             .cloned()
                             .collect(),
                     });
@@ -241,51 +254,69 @@ fn spawn_recorder(status: Arc<AtomicBool>) -> mpsc::UnboundedSender<RecordingEve
     tx
 }
 
-fn snapshot_to_csv(snapshot: &RecorderSnapshot) -> String {
-    const HEADER: &str = "timestamp_ms,transport,peer,valid,heartbeat,message,response";
-    const HEADER_CERT: &str = ",client_cert_subject,client_cert_thumbprint";
+const CHUNK_SIZE: usize = 64 * 1024;
 
-    let include_certificate = snapshot.entries.iter().any(|e| e.client_cert.is_some());
-    let capacity = if include_certificate {
-        HEADER.len() + HEADER_CERT.len() + snapshot.entries.len() * 296
-    } else {
-        HEADER.len() + snapshot.entries.len() * 192
-    };
-    let mut out = String::with_capacity(capacity);
+const CSV_HEADER: &str = "timestamp_ms,transport,peer,valid,heartbeat,message,response";
+const CSV_HEADER_CERT: &str = ",client_cert_subject,client_cert_thumbprint";
 
-    out.push_str(HEADER);
-    if include_certificate {
-        out.push_str(HEADER_CERT);
-    }
-    out.push('\n');
+/// Iterator over CSV chunks.
+pub struct CsvChunks {
+    entries: std::vec::IntoIter<Arc<RecordedEntry>>,
+    include_cert: bool,
+    header_sent: bool,
+}
 
-    for e in &snapshot.entries {
-        let _ = write!(
-            out,
-            "{},{},{},{},{},",
-            e.timestamp_ms, e.transport, e.peer, e.valid, e.heartbeat
-        );
-        csv_write_escaped(&mut out, &e.message);
-        out.push(',');
-        if let Some(r) = e.response.as_deref() {
-            csv_write_escaped(&mut out, r);
-        }
-        if include_certificate {
-            out.push(',');
-            if let Some(cert) = &e.client_cert {
-                if let Some(subject) = &cert.subject {
-                    csv_write_escaped(&mut out, subject);
-                }
-                out.push(',');
-                out.push_str(&cert.thumbprint);
-            } else {
-                out.push(',');
+impl Iterator for CsvChunks {
+    type Item = Result<String, !>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut out = String::with_capacity(CHUNK_SIZE + 1024);
+
+        if !self.header_sent {
+            out.push_str(CSV_HEADER);
+            if self.include_cert {
+                out.push_str(CSV_HEADER_CERT);
             }
+            out.push('\n');
+            self.header_sent = true;
         }
-        out.push('\n');
+
+        while out.len() < CHUNK_SIZE {
+            let Some(e) = self.entries.next() else { break };
+            write_csv_row(&mut out, &e, self.include_cert);
+        }
+
+        (!out.is_empty()).then_some(Ok(out))
+    }
+}
+
+fn write_csv_row(out: &mut String, e: &RecordedEntry, include_certificate: bool) {
+    let _ = write!(
+        out,
+        "{},{},{},{},{},",
+        e.timestamp_ms, e.transport, e.peer, e.valid, e.heartbeat
+    );
+    csv_write_escaped(out, &e.message);
+
+    out.push(',');
+    if let Some(r) = e.response.as_deref() {
+        csv_write_escaped(out, r);
     }
 
-    out
+    if include_certificate {
+        out.push(',');
+        if let Some(cert) = &e.client_cert {
+            if let Some(subject) = &cert.subject {
+                csv_write_escaped(out, subject);
+            }
+            out.push(',');
+            out.push_str(&cert.thumbprint);
+        } else {
+            out.push(',');
+        }
+    }
+
+    out.push('\n');
 }
 
 fn csv_write_escaped(out: &mut String, s: &str) {
@@ -305,4 +336,56 @@ fn csv_write_escaped(out: &mut String, s: &str) {
     out.push_str(remaining);
 
     out.push('"');
+}
+
+/// Iterator over JSON chunks.
+pub struct JsonChunks {
+    status: RecordingStatus,
+    entries: std::vec::IntoIter<Arc<RecordedEntry>>,
+    started: bool,
+    first: bool,
+    done: bool,
+}
+
+impl Iterator for JsonChunks {
+    type Item = Result<Vec<u8>, !>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.done {
+            return None;
+        }
+
+        let mut out: Vec<u8> = Vec::with_capacity(CHUNK_SIZE + 1024);
+
+        if !self.started {
+            out.extend_from_slice(br#"{"status":"#);
+            let _ = serde_json::to_writer(&mut out, &self.status);
+            out.extend_from_slice(br#","entries":["#);
+            self.started = true;
+        }
+
+        while out.len() < CHUNK_SIZE {
+            match self.entries.next() {
+                Some(e) => {
+                    let rollback = out.len();
+                    if !self.first {
+                        out.push(b',');
+                    }
+                    if let Err(err) = serde_json::to_writer(&mut out, &*e) {
+                        log::error!("failed to serialize entry: {err}");
+                        out.truncate(rollback);
+                        continue;
+                    }
+                    self.first = false;
+                },
+                None => {
+                    out.extend_from_slice(b"]}");
+                    self.done = true;
+                    break;
+                },
+            }
+        }
+
+        Some(Ok(out))
+    }
 }

@@ -902,6 +902,7 @@ dependencies = [
  "axum",
  "clap",
  "common",
+ "futures-util",
  "hex",
  "log",
  "prometheus",

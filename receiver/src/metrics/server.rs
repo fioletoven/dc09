@@ -3,6 +3,7 @@ use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, Response, StatusCode};
 use axum::routing::{get, put};
 use axum::{Json, Router, body::Body, response::IntoResponse};
+use futures_util::stream;
 use prometheus::{self, Encoder, TextEncoder};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
@@ -254,12 +255,12 @@ async fn recording_get(State(state): State<AppState>, Query(query): Query<Record
             .status(StatusCode::OK)
             .header("content-type", "text/csv; charset=utf-8")
             .header("content-disposition", "attachment; filename=\"recording.csv\"")
-            .body(Body::from(snapshot.to_csv()))
+            .body(Body::from_stream(stream::iter(snapshot.csv_chunks())))
             .unwrap(),
         Some(snapshot) => Response::builder()
             .status(StatusCode::OK)
             .header("content-type", "application/json")
-            .body(Body::from(snapshot.to_json()))
+            .body(Body::from_stream(stream::iter(snapshot.json_chunks())))
             .unwrap(),
     }
 }
